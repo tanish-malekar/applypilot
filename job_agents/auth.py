@@ -26,7 +26,7 @@ class Accounts:
                 ).get("role", "")
             except (ValueError, TypeError, AttributeError):
                 pass
-        if self.key.startswith("sb_secret_") or legacy_role == "service_role":
+        if self.key and not (self.key.startswith("sb_publishable_") or legacy_role == "anon"):
             raise ValueError("Use a public Supabase publishable/anon key, not a secret key")
 
     async def verify(self, authorization: str) -> dict:

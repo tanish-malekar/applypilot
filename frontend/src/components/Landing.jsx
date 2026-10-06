@@ -92,7 +92,7 @@ export default function Landing({ navigate, user, demoMode, accountsReady }) {
               <ArrowRight size={17} />
             </button>
             <a href="#workspace-preview" className="landing-outline">
-              Explore the workspace <ArrowUpRight size={15} />
+              Preview dashboard <ArrowUpRight size={15} />
             </a>
           </div>
           <div className="landing-benefits">

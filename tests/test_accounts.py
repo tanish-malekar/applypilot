@@ -95,6 +95,9 @@ def test_private_keys_are_never_exposed_as_public_config(monkeypatch):
     monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_secret_must_not_be_exposed")
     with pytest.raises(ValueError, match="public"):
         Accounts()
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "wrong-provider-private-key")
+    with pytest.raises(ValueError, match="public"):
+        Accounts()
     payload = base64.urlsafe_b64encode(json.dumps({"role": "service_role"}).encode()).decode()
     monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "header." + payload + ".signature")
     with pytest.raises(ValueError, match="public"):

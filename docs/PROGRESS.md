@@ -9,6 +9,7 @@ Implemented the single-source Greenhouse feed, editable applicant profile, LangG
 Validation completed locally:
 
 - Ruff: passed.
+- GitHub Actions on Linux/Python 3.12: passed, including the Chromium integration test ([run](https://github.com/tanish-malekar/job-application-agents/actions/runs/37534285357)).
 - Unit/API/workflow tests: 16 passed.
 - Chromium integration test: passed; verified form fields, upload, screenshot, review, submission receipt, and refusal to resume an already-completed run.
 - Synthetic eligibility evaluation: 16/16 labeled scenarios matched; metrics in `day1-eligibility-results.json`. This is a smoke set, not evidence of real-world accuracy.

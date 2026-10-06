@@ -11,7 +11,8 @@ def fact_bank(applicant: Applicant) -> dict[str, str]:
     if applicant.graduation_date:
         facts["graduation"] = f"My graduation date is {applicant.graduation_date}."
     if applicant.experience_years is not None:
-        facts["experience"] = f"I have {applicant.experience_years:g} years of experience."
+        unit = "year" if applicant.experience_years == 1 else "years"
+        facts["experience"] = f"I have {applicant.experience_years:g} {unit} of experience."
     if applicant.skills:
         facts["skills"] = f"My skills include {', '.join(applicant.skills)}."
     for i, accomplishment in enumerate(applicant.accomplishments):

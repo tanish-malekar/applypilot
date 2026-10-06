@@ -11,6 +11,7 @@ from uuid import UUID
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from job_agents.browser import expected_fields
@@ -19,6 +20,7 @@ from job_agents.models import Applicant, PreparedContent, RunRequest
 from job_agents.workflow import Workflow
 
 WEB = Path(__file__).parent / "web"
+APP_WEB = WEB / "app"
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
 
@@ -35,6 +37,7 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
         app.state.workflow.close()
 
     app = FastAPI(title="ApplyPilot", version="0.1.0", lifespan=lifespan)
+    app.mount("/assets", StaticFiles(directory=APP_WEB / "assets", check_dir=False), name="assets")
 
     admission = threading.BoundedSemaphore(2)
 
@@ -61,7 +64,11 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
 
     @app.get("/", response_class=HTMLResponse)
     def home():
-        return (WEB / "index.html").read_text()
+        if not (APP_WEB / "index.html").is_file():
+            raise HTTPException(
+                503, "Build the React frontend: npm ci and npm run build in frontend/."
+            )
+        return FileResponse(APP_WEB / "index.html", headers={"Cache-Control": "no-cache"})
 
     @app.get("/health")
     def health():

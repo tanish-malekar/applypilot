@@ -9,3 +9,5 @@ __pycache__/
 runtime/
 *.egg-info/
 .DS_Store
+frontend/node_modules/
+job_agents/web/app/

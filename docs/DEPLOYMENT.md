@@ -4,7 +4,7 @@ Live platform: https://job-application-agents.onrender.com
 
 The existing Render service is srv-db2mi9qj9qps73eo5m7g, connected to tanish-malekar/applypilot on main. Its original service URL remains stable after the repository rename. The platform UI and repository are branded ApplyPilot. Use this existing service for updates; creating another Blueprint is unnecessary. The hosted workflow has been verified using Groq and a sandbox approval/submission.
 
-The website serves real Greenhouse jobs and the ApplyPilot workflow from the same FastAPI service. Deploy the Dockerfile through Render using the **Free** instance plan. `render.yaml` contains the configuration and enables deployment from actual commits on `main`.
+The website serves real Greenhouse jobs and the ApplyPilot workflow from the same FastAPI service. The Dockerfile builds the React/Vite frontend in a Node.js stage and serves its bundled assets through FastAPI in the Python runtime. Deploy the Dockerfile through Render using the **Free** instance plan. `render.yaml` contains the configuration and enables deployment from actual commits on `main`.
 
 1. Sign in to [Render](https://dashboard.render.com).
 2. Connect only the `tanish-malekar/applypilot` repository to Render, or deploy its Blueprint. The source repo can remain private.

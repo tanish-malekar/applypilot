@@ -9,3 +9,5 @@ __pycache__
 tests
 docs
 work
+frontend/node_modules
+job_agents/web/app

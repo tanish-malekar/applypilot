@@ -24,6 +24,9 @@ job-agents = "job_agents.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["job_agents"]
 
+[tool.hatch.build]
+artifacts = ["job_agents/web/app/**"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["browser: launches local Chromium against the sandbox"]

@@ -23,7 +23,7 @@ The hosted application connects to live Greenhouse listings and executes applica
 
 1. Open [ApplyPilot](https://job-application-agents.onrender.com) and review or edit the sample applicant.
 2. Select a sample job to exercise the complete workflow, or use **Find jobs** to search a live Greenhouse board. The default board is `arvaintelligence`.
-3. Choose **Start application**. Inspect the eligibility checks, grounded content, agent trace, and browser screenshot.
+3. Choose **Prepare application**. Inspect the eligibility checks, grounded content, agent trace, and browser screenshot.
 4. Supply any missing applicant facts, then approve or reject the prepared sandbox application.
 5. Find the result and receipt under **Recent applications**.
 
@@ -52,6 +52,7 @@ flowchart TD
 | --- | --- | --- |
 | Agent orchestration | LangGraph | Typed specialist nodes, conditional routing, interrupts, and checkpoints |
 | Model integration | LangChain, Groq, Ollama | Structured selection of verified applicant facts |
+| Frontend | React, Vite, Lucide | Responsive dashboard, profile editing, job cards, and review workspace |
 | API and validation | FastAPI, Pydantic | Application endpoints and validated job/profile data |
 | Browser execution | Playwright, Chromium | Form autofill, resume upload, screenshots, and field verification |
 | Persistence | SQLite | Applicant facts, workflow state, application history, and receipts |
@@ -65,11 +66,15 @@ Each agent records its action and outcome in the application trace. Browser scre
 
 ## Run locally
 
-Requires Python 3.11+.
+Requires Python 3.11+ and Node.js 24.
 
 ```bash
 git clone https://github.com/tanish-malekar/applypilot.git
 cd applypilot
+cd frontend
+npm ci
+npm run build
+cd ..
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.lock
@@ -78,7 +83,7 @@ python -m playwright install chromium
 python scripts/start-server.py
 ```
 
-Open http://127.0.0.1:8000. Runtime screenshots, generated resumes, applicant facts, and checkpoints are stored in ignored `runtime/`.
+Open http://127.0.0.1:8000. For frontend development, keep the API running and use `npm run dev` in `frontend/`; Vite proxies API requests to the local backend. Rebuild before running or deploying the production interface. Runtime screenshots, generated resumes, applicant facts, and checkpoints are stored in ignored `runtime/`.
 
 ## AI configuration
 
@@ -93,6 +98,7 @@ Groq defaults to `GROQ_MODEL=openai/gpt-oss-20b`. Configure credentials as envir
 ## Validation
 
 ```bash
+cd frontend && npm ci && npm run build && cd ..
 ruff check .
 pytest -q -m 'not browser'
 python scripts/evaluate.py
@@ -102,7 +108,7 @@ applypilot demo --approve-sandbox
 applypilot eligibility
 ```
 
-The current suite includes 16 unit/API/workflow tests and a real Chromium integration test. The eligibility smoke set matches all 16 labeled synthetic scenarios; this small fixture set does not establish accuracy on real job postings. [Evaluation results](docs/day1-eligibility-results.json)
+The current suite includes 16 unit/API/workflow tests and two real Chromium integration tests, covering both the backend browser flow and the React profile/input/review/history flow. The eligibility smoke set matches all 16 labeled synthetic scenarios; this small fixture set does not establish accuracy on real job postings. [Evaluation results](docs/day1-eligibility-results.json)
 
 ## Hosting and data
 

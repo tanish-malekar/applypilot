@@ -7,6 +7,8 @@ import {
   FileCheck2,
   FileText,
   HelpCircle,
+  House,
+  LogOut,
   LayoutDashboard,
   LoaderCircle,
   Search,
@@ -49,7 +51,7 @@ function StudioDialog({ open, onClose, children }) {
   );
 }
 
-export default function App() {
+export default function App({ user, onSignOut, onHome }) {
   const [demo, setDemo] = useState(null);
   const [applicant, setApplicant] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -77,9 +79,10 @@ export default function App() {
       try {
         const data = await api("/api/demo");
         const saved = await api("/api/runs");
+        const profile = await api("/api/profile");
         if (active) {
           setDemo(data);
-          setApplicant(data.applicant);
+          setApplicant(profile);
           setJobs(data.jobs);
           setSelected(data.jobs[0]?.id || "");
           setRuns(saved);
@@ -123,12 +126,22 @@ export default function App() {
                 "rejected",
               ].includes(item.status))),
   );
+  async function saveProfile(profile) {
+    setApplicant(await api("/api/profile", profile));
+  }
   async function acceptRun(result) {
     setRun(result);
     setRuns(await api("/api/runs"));
   }
   async function start(job = selectedJob) {
     if (!job || !applicant || busy) return;
+    if (user && !applicant.name.trim()) {
+      setProfileOpen(true);
+      setFeedback(
+        "Add your name and verified profile details before preparing an application.",
+      );
+      return;
+    }
     setSelected(job.id);
     setRun(null);
     setStudioOpen(true);
@@ -223,7 +236,14 @@ export default function App() {
         Skip to workspace
       </a>
       <aside className="sidebar">
-        <a href="#main" className="brand" onClick={() => setView("overview")}>
+        <a
+          href="/"
+          className="brand"
+          onClick={(event) => {
+            event.preventDefault();
+            onHome?.();
+          }}
+        >
           <span className="brand-mark">
             <Send size={21} />
           </span>
@@ -271,6 +291,14 @@ export default function App() {
           </button>
         </nav>
         <div className="sidebar-bottom">
+          <button className="nav-item" onClick={onHome}>
+            <House size={19} /> Home
+          </button>
+          {user && (
+            <button className="nav-item" onClick={onSignOut} disabled={busy}>
+              <LogOut size={19} /> Log out
+            </button>
+          )}
           <div className="sandbox-label">
             <span /> Sandbox workspace
           </div>
@@ -311,6 +339,16 @@ export default function App() {
             )}
           </label>
           <div className="topbar-right">
+            {user && (
+              <button
+                className="icon-button mobile-signout"
+                aria-label="Log out"
+                disabled={busy}
+                onClick={onSignOut}
+              >
+                <LogOut size={18} />
+              </button>
+            )}
             <button
               className="icon-button help-button"
               aria-label="How it works"
@@ -600,7 +638,8 @@ export default function App() {
         applicant={applicant}
         open={profileOpen}
         onClose={() => setProfileOpen(false)}
-        onSave={setApplicant}
+        onSave={saveProfile}
+        realAccount={Boolean(user)}
         missing={missing}
         setMissing={setMissing}
       />

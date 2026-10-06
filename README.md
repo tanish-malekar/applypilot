@@ -4,11 +4,14 @@
 
 ApplyPilot is a stateful job-application platform that connects live job discovery with eligibility screening, fact-grounded application content, browser autofill, and human-in-the-loop review. Specialized workflow agents share applicant memory and checkpoints so each application can pause, resume, and leave a clear audit trail.
 
-[Open ApplyPilot](https://job-application-agents.onrender.com) · [Deployment guide](docs/DEPLOYMENT.md) · [Technology research](docs/STACK_RESEARCH.md)
+[Open ApplyPilot](https://job-application-agents.onrender.com) · [Account setup](docs/ACCOUNTS_SETUP.md) · [Deployment guide](docs/DEPLOYMENT.md) · [Technology research](docs/STACK_RESEARCH.md)
 
 ![ApplyPilot React workspace](docs/assets/applypilot-workspace.jpg)
 
 ## What you can do
+
+- **Explore the platform** — A public home page introduces the workflow and shows the actual dashboard.
+- **Use your own account** — Email/password signup, login, recovery, and Google sign-in through Supabase; enable your providers using the account setup guide.
 
 - **Find live jobs** — Search a company's Greenhouse board by keyword and open the original posting.
 - **Manage your applicant profile** — Edit qualifications, skills, accomplishments, location, and work preferences.
@@ -23,7 +26,7 @@ The hosted application connects to live Greenhouse listings and executes applica
 
 ## Try the platform
 
-1. Open [ApplyPilot](https://job-application-agents.onrender.com) and review or edit the sample applicant.
+1. Open [ApplyPilot](https://job-application-agents.onrender.com), explore its features, then open your workspace. Account-enabled installations support signup or Google sign-in; the sample workspace is available while account activation is pending. Review or edit your applicant profile.
 2. Open **Browse jobs** to search a live Greenhouse board, or use a sample role to explore the complete workflow. The default board is `arvaintelligence`.
 3. Choose **Prepare** on a job card. Inspect the eligibility checks, grounded content, agent trace, and browser screenshot.
 4. Supply any missing applicant facts, then approve or reject the prepared sandbox application.
@@ -57,12 +60,13 @@ flowchart TD
 | Frontend | React, Vite, Lucide | Responsive dashboard, profile editing, job cards, and review workspace |
 | API and validation | FastAPI, Pydantic | Application endpoints and validated job/profile data |
 | Browser execution | Playwright, Chromium | Form autofill, resume upload, screenshots, and field verification |
-| Persistence | SQLite | Applicant facts, workflow state, application history, and receipts |
+| Accounts | Supabase Auth | Managed email/password and Google OAuth sessions, verified by the API |
+| Persistence | PostgreSQL, SQLite | Private account profiles, memory, LangGraph checkpoints, history, receipts, and screenshot evidence |
 | Evaluation | pytest, scikit-learn, GitHub Actions | Workflow checks, eligibility metrics, and browser integration |
 
 ## Guardrails and visibility
 
-Content references verified profile fact IDs; unsupported or repeated facts fail validation. A separate verification step checks both content and browser fields. Submission requires human approval and a fresh verification pass. Applicant memory and histories are scoped by visitor, and completed runs reject duplicate submission attempts.
+Content references verified profile fact IDs; unsupported or repeated facts fail validation. A separate verification step checks both content and browser fields. Submission requires human approval and a fresh verification pass. Account-enabled requests are verified with Supabase before the API uses the account ID for ownership. Applicant memory, profiles, runs, and screenshots are account-scoped; completed runs reject duplicate submission attempts. The sample workspace uses a visitor cookie when account configuration is absent.
 
 Each agent records its action and outcome in the application trace. Browser screenshots and receipts make the execution reviewable. Errors appear in the workflow instead of being reported as successful applications.
 
@@ -105,15 +109,17 @@ ruff check .
 pytest -q -m 'not browser'
 python scripts/evaluate.py
 # With the local server already running:
-RUN_BROWSER_TESTS=1 pytest tests/test_browser.py -q
+RUN_BROWSER_TESTS=1 pytest -q -m browser
 applypilot demo --approve-sandbox
 applypilot eligibility
 ```
 
-The current suite includes 16 unit/API/workflow tests and two real Chromium integration tests, covering both the backend browser flow and the React profile/input/review/history flow. The eligibility smoke set matches all 16 labeled synthetic scenarios; this small fixture set does not establish accuracy on real job postings. [Evaluation results](docs/day1-eligibility-results.json)
+The suite covers workflow and API behavior, account isolation and token rejection, four Chromium browser tests, and a PostgreSQL restart/resume test. Browser auth tests use an isolated provider fixture; real Google and email delivery require live provider verification. Set `PG_TEST_DATABASE_URL` to an isolated PostgreSQL database to run the persistence test. GitHub Actions provisions this database automatically. The eligibility smoke set matches all 16 labeled synthetic scenarios; this small fixture set does not establish accuracy on real job postings. [Evaluation results](docs/day1-eligibility-results.json)
 
 ## Hosting and data
 
-ApplyPilot runs on Render Free. Idle services may take about a minute to wake, and the free instance's local history and checkpoints reset on sleep, restart, or redeploy. Local installations retain SQLite state across process restarts. See the [deployment guide](docs/DEPLOYMENT.md) for configuration and storage behavior.
+ApplyPilot runs on Render Free. Idle services may take about a minute to wake. Account-enabled deployments use an external Supabase PostgreSQL database so profiles, histories, checkpoint memory, and screenshot evidence survive a restart or redeployment. Without `DATABASE_URL`, the sample workspace uses local SQLite and its hosted state resets with the free instance. Local installations retain SQLite state across process restarts.
 
-Use fictional applicant information on the public site. Application execution currently supports the built-in sandbox; arbitrary employer ATS submission and production account management are outside the supported workflow.
+Managed account activation requires the project's public Supabase configuration, a private PostgreSQL session-pooler URI, and provider setup. See [account setup](docs/ACCOUNTS_SETUP.md) for Google OAuth, confirmation/reset email delivery, and creating a confirmed test account. Private credentials are entered in hosting/provider settings. The deployed application never needs a Supabase admin key.
+
+Application execution supports the built-in sandbox; arbitrary employer ATS submission is outside the supported workflow. The public sample workspace uses fictional applicant information. Account owners can save their own verified profile details; the [data information page](https://job-application-agents.onrender.com/privacy) explains storage and model processing.

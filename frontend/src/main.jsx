@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import App from "./App.jsx";
+import AuthShell from "./AuthShell.jsx";
 import "./styles.css";
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(<AuthShell />);

@@ -16,8 +16,14 @@ Without a model key the platform is still functional, using deterministic ground
 
 ## Limits that affect the demo
 
-[Render Free documentation](https://render.com/docs/free) states that services sleep after 15 idle minutes, can take roughly a minute to wake, and lose local files/SQLite state on restart, redeploy, or sleep. Cloud application history and checkpoint memory therefore last only for the current instance lifetime. Local use persists across process restarts. There is no paid disk or database in this deployment.
+[Render Free documentation](https://render.com/docs/free) states that services sleep after 15 idle minutes, can take roughly a minute to wake, and lose local files/SQLite state on restart, redeploy, or sleep. Without an external database, sample-workspace history and checkpoint memory last only for the current instance lifetime. Managed account deployments require an external PostgreSQL database; a Supabase Free project provides account storage and checkpoints without a paid Render disk. Local SQLite use persists across process restarts.
 
-Free services share 750 instance hours monthly and have bandwidth/build quotas. Keep the workspace on a free plan with no payment method so quota exhaustion suspends services instead of creating overage charges. This is suitable for a low-traffic personal installation. Anonymous visitor cookies scope histories and applicant memory; it is not a production identity/account system. Use fictional data for public demonstrations.
+Free services share 750 instance hours monthly and have bandwidth/build quotas. Keep the workspace on a free plan with no payment method so quota exhaustion suspends services instead of creating overage charges. This is suitable for a low-traffic personal installation. When managed accounts are not configured, anonymous visitor cookies scope the sample workspace; use fictional data in that mode. Configuring Supabase requires durable PostgreSQL storage, verifies account tokens on protected requests, and disables anonymous workflow access. Follow [account setup](ACCOUNTS_SETUP.md) before inviting real users; Google provider configuration and public signup email delivery must be verified.
 
 Hugging Face Docker was considered, but its current [Spaces documentation](https://huggingface.co/docs/hub/spaces-overview) says compute Spaces require a paid plan. No paid service has been provisioned.
+
+## Account-enabled deployment
+
+Configure `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL`, and `AUTH_REQUIRED=1` together in the existing Render service. The first two are public browser configuration; the PostgreSQL URI stays private. Use Supabase's session pooler on port 5432 with TLS. The application initializes its private database schema and LangGraph checkpoint tables automatically. Sign-in requires only the public Supabase key; do not give the frontend a secret/service-role key. No paid service has been provisioned.
+
+The public home page is served at `/`, account screens at `/signup` and `/login`, and the authenticated dashboard at `/app`. Google/email callbacks use `/auth/callback`; reset links use `/auth/recovery`. Google availability is discovered from provider settings. While configuration is pending, the existing sample workflow remains at `/demo` and no account access is represented as active.

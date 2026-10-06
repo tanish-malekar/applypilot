@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { imageBlob } from "../api.js";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -16,6 +18,42 @@ import {
 } from "lucide-react";
 import Badge from "./Badge.jsx";
 import { pretty } from "../lib/ui.js";
+
+function BrowserEvidence({ path }) {
+  const [url, setUrl] = useState(""),
+    [error, setError] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    let objectUrl;
+    imageBlob(path, controller.signal)
+      .then((blob) => {
+        if (!controller.signal.aborted) {
+          objectUrl = URL.createObjectURL(blob);
+          setUrl(objectUrl);
+        }
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) setError(err.message);
+      });
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [path]);
+  return error ? (
+    <p className="auth-error" role="alert">
+      {error}
+    </p>
+  ) : url ? (
+    <img
+      className="browser-evidence"
+      src={url}
+      alt="Application form filled and verified by the browser agent"
+    />
+  ) : (
+    <p className="evidence-loading">Loading browser evidence…</p>
+  );
+}
 
 function MissingFacts({ pending, onResume, busy }) {
   function submit(event) {
@@ -51,9 +89,26 @@ function MissingFacts({ pending, onResume, busy }) {
         {pending.fields.map((field) => (
           <label key={field}>
             {pretty(field)}
-            {["work_authorized", "needs_sponsorship", "has_clearance"].includes(
-              field,
-            ) ? (
+            {field === "degree" ? (
+              <select
+                name={field}
+                aria-label={pretty(field)}
+                required
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Choose your degree
+                </option>
+                <option value="high_school">High school</option>
+                <option value="bachelors">Bachelor's</option>
+                <option value="masters">Master's</option>
+                <option value="phd">PhD</option>
+              </select>
+            ) : [
+                "work_authorized",
+                "needs_sponsorship",
+                "has_clearance",
+              ].includes(field) ? (
               <select
                 name={field}
                 aria-label={pretty(field)}
@@ -294,15 +349,13 @@ export default function Workspace({ run, busy, onResume, selectedJob }) {
                 </span>
                 <ChevronRight size={16} />
               </summary>
-              <img
-                className="browser-evidence"
-                src={
+              <BrowserEvidence
+                path={
                   "/api/runs/" +
                   run.run_id +
                   "/screenshot?t=" +
                   run.trace.length
                 }
-                alt="Application form filled and verified by the browser agent"
               />
             </details>
           )}

@@ -10,10 +10,11 @@ from uuid import UUID
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
+from job_agents.auth import Accounts
 from job_agents.browser import expected_fields
 from job_agents.ingestion import fetch_jobs
 from job_agents.models import Applicant, PreparedContent, RunRequest
@@ -25,11 +26,16 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
 
 def create_app(directory: Path | None = None, base_url: str | None = None):
+    local_override = directory is not None
     directory = directory or Path(os.environ.get("JOB_AGENTS_DATA_DIR", "runtime"))
     base_url = base_url or os.environ.get("JOB_AGENTS_BASE_URL", "http://127.0.0.1:8000")
 
     @asynccontextmanager
     async def lifespan(app):
+        if accounts.required and not accounts.enabled and not local_override:
+            raise RuntimeError("Configure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY together.")
+        if accounts.required and not os.environ.get("DATABASE_URL") and not local_override:
+            raise RuntimeError("DATABASE_URL is required for durable account storage.")
         app.state.workflow = Workflow(
             directory, base_url, content_mode=os.environ.get("CONTENT_MODE", "deterministic")
         )
@@ -39,6 +45,7 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
     app = FastAPI(title="ApplyPilot", version="0.1.0", lifespan=lifespan)
     app.mount("/assets", StaticFiles(directory=APP_WEB / "assets", check_dir=False), name="assets")
 
+    accounts = Accounts()
     admission = threading.BoundedSemaphore(2)
 
     @app.middleware("http")
@@ -47,6 +54,16 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
         if not re.fullmatch(r"[a-zA-Z0-9_-]{32}", session):
             session = secrets.token_urlsafe(24)
         request.state.visitor = session
+        request.state.account = None
+        protected = request.url.path.startswith(("/api/runs", "/api/profile", "/api/me"))
+        authorization = request.headers.get("authorization", "")
+        if protected and (accounts.required or authorization):
+            try:
+                user = await accounts.verify(authorization)
+                request.state.account = user
+                request.state.visitor = "user:" + user["id"]
+            except HTTPException as exc:
+                return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
         response = await call_next(request)
         response.set_cookie(
             "visitor",
@@ -62,6 +79,14 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
         if not request.app.state.workflow.store.owns(str(run_id), request.state.visitor):
             raise HTTPException(404, "Run not found")
 
+    @app.get("/privacy", response_class=HTMLResponse)
+    @app.get("/auth/recovery", response_class=HTMLResponse)
+    @app.get("/auth/callback", response_class=HTMLResponse)
+    @app.get("/reset-password", response_class=HTMLResponse)
+    @app.get("/signup", response_class=HTMLResponse)
+    @app.get("/login", response_class=HTMLResponse)
+    @app.get("/app", response_class=HTMLResponse)
+    @app.get("/demo", response_class=HTMLResponse)
     @app.get("/", response_class=HTMLResponse)
     def home():
         if not (APP_WEB / "index.html").is_file():
@@ -73,6 +98,33 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
     @app.get("/health")
     def health():
         return {"status": "ok", "mode": "local_sandbox"}
+
+    @app.get("/api/auth/config")
+    async def auth_config():
+        return await accounts.public_config()
+
+    @app.get("/api/me")
+    def me(request: Request):
+        return {"user": request.state.account}
+
+    @app.get("/api/profile")
+    def profile(request: Request):
+        saved = request.app.state.workflow.store.get_profile(request.state.visitor)
+        if saved:
+            return saved
+        if request.state.account:
+            user = request.state.account
+            return Applicant(
+                id="default", name=user["name"] or user["email"].split("@")[0], email=user["email"]
+            ).model_dump(mode="json")
+        return json.loads((EXAMPLES / "applicant.json").read_text())
+
+    @app.post("/api/profile")
+    def save_profile(body: Applicant, request: Request):
+        body.id = "default"
+        data = body.model_dump(mode="json")
+        request.app.state.workflow.store.save_profile(request.state.visitor, data)
+        return data
 
     @app.get("/api/demo")
     def demo():
@@ -93,9 +145,13 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
     @app.post("/api/runs")
     def start(body: RunRequest, request: Request):
         if not admission.acquire(blocking=False):
-            raise HTTPException(429, "Demo is busy. Try again shortly.")
+            raise HTTPException(429, "Application workers are busy. Try again shortly.")
         try:
-            body.applicant.id = request.state.visitor + ":" + body.applicant.id[:60]
+            body.applicant.id = (
+                request.state.visitor
+                + ":"
+                + ("default" if request.state.account else body.applicant.id[:60])
+            )
             run = request.app.state.workflow.start(body)
             request.app.state.workflow.store.claim(run["run_id"], request.state.visitor)
             return run
@@ -120,7 +176,7 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
     def resume(run_id: UUID, body: dict, request: Request):
         require_owner(request, run_id)
         if not admission.acquire(blocking=False):
-            raise HTTPException(429, "Demo is busy. Try again shortly.")
+            raise HTTPException(429, "Application workers are busy. Try again shortly.")
         try:
             return request.app.state.workflow.resume(str(run_id), body)
         except KeyError:
@@ -136,7 +192,17 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
         run = request.app.state.workflow.store.get_run(str(run_id))
         if not run or not run.get("browser", {}).get("screenshot"):
             raise HTTPException(404, "Screenshot not available")
-        return FileResponse(run["browser"]["screenshot"], media_type="image/png")
+        png = request.app.state.workflow.store.get_artifact(str(run_id))
+        if png:
+            return Response(
+                png, media_type="image/png", headers={"Cache-Control": "private, no-store"}
+            )
+        path = Path(run["browser"]["screenshot"])
+        if not path.is_file():
+            raise HTTPException(404, "Screenshot not available")
+        return FileResponse(
+            path, media_type="image/png", headers={"Cache-Control": "private, no-store"}
+        )
 
     @app.get("/sandbox/{run_id}", response_class=HTMLResponse)
     def sandbox(run_id: UUID, request: Request):

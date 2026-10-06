@@ -38,7 +38,7 @@ def test_react_profile_missing_fact_approval_and_history():
         browser = playwright.chromium.launch()
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
-        page.goto("http://127.0.0.1:8000")
+        page.goto("http://127.0.0.1:8000/demo")
         page.get_by_label("Search by title or company").fill("Secure")
         expect(
             page.get_by_role("button", name="Prepare application for ML Engineer, Secure Systems")

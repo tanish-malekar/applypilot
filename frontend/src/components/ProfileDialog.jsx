@@ -9,9 +9,12 @@ export default function ProfileDialog({
   onSave,
   missing,
   setMissing,
+  realAccount,
 }) {
   const dialog = useRef(null);
   const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   useEffect(() => {
     if (open && applicant) {
       setDraft(
@@ -27,7 +30,7 @@ export default function ProfileDialog({
       if (!dialog.current.open) dialog.current.showModal();
     } else if (dialog.current?.open) dialog.current.close();
   }, [open, applicant]);
-  function save(event) {
+  async function save(event) {
     event.preventDefault();
     const updated = { ...applicant };
     for (const [key, , type] of profileFields) {
@@ -48,8 +51,16 @@ export default function ProfileDialog({
                 : Number(value)
               : value || null;
     }
-    onSave(updated);
-    onClose();
+    setSaving(true);
+    setError("");
+    try {
+      await onSave(updated);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   }
   return (
     <dialog
@@ -76,6 +87,11 @@ export default function ProfileDialog({
         Your agents work from these facts. Start with the sample profile or add
         your own verified details.
       </p>
+      {error && (
+        <p className="auth-error" role="alert">
+          {error}
+        </p>
+      )}
       <form onSubmit={save}>
         <div className="profile-fields">
           {profileFields.map(([key, label, type]) => (
@@ -151,9 +167,12 @@ export default function ProfileDialog({
         </details>
         <div className="dialog-footer">
           <span>
-            <ShieldCheck size={15} /> Use fictional data on the public site.
+            <ShieldCheck size={15} />{" "}
+            {realAccount
+              ? "Saved privately to your account."
+              : "Use fictional data in the sample workspace."}
           </span>
-          <button className="primary" type="submit">
+          <button className="primary" type="submit" disabled={saving}>
             Save profile <Check size={16} />
           </button>
         </div>

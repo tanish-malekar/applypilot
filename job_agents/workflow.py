@@ -1,4 +1,5 @@
 import operator
+import os
 import sqlite3
 import threading
 from datetime import datetime, timezone
@@ -51,15 +52,32 @@ class Workflow:
         content_mode="deterministic",
         browser=None,
     ):
-        self.store = Store(directory)
+        database_url = os.environ.get("DATABASE_URL")
+        self.store = Store(directory, database_url)
         self.browser = browser or SandboxBrowser(base_url, directory)
         self.content_mode = content_mode
-        self.connection = sqlite3.connect(directory / "checkpoints.sqlite", check_same_thread=False)
+        self.postgres_context = None
+        if database_url:
+            from langgraph.checkpoint.postgres import PostgresSaver
+
+            self.postgres_context = PostgresSaver.from_conn_string(database_url)
+            saver = self.postgres_context.__enter__()
+            saver.conn.execute("SET search_path TO applypilot")
+            saver.setup()
+            self.connection = None
+        else:
+            self.connection = sqlite3.connect(
+                directory / "checkpoints.sqlite", check_same_thread=False
+            )
+            saver = SqliteSaver(self.connection)
         self.lock = threading.RLock()
-        self.graph = self.build().compile(checkpointer=SqliteSaver(self.connection))
+        self.graph = self.build().compile(checkpointer=saver)
 
     def close(self):
-        self.connection.close()
+        if self.postgres_context:
+            self.postgres_context.__exit__(None, None, None)
+        elif self.connection:
+            self.connection.close()
 
     def build(self):
         graph = StateGraph(State)
@@ -274,6 +292,9 @@ class Workflow:
                 if pending[0]["kind"] == "missing_information"
                 else "awaiting_review"
             )
+        screenshot = result.get("browser", {}).get("screenshot")
+        if screenshot and Path(screenshot).is_file():
+            self.store.save_artifact(run_id, Path(screenshot).read_bytes())
         self.store.save_run(run_id, result)
         return result
 

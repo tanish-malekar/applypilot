@@ -6,6 +6,8 @@ ApplyPilot is a stateful job-application platform that connects live job discove
 
 [Open ApplyPilot](https://job-application-agents.onrender.com) · [Deployment guide](docs/DEPLOYMENT.md) · [Technology research](docs/STACK_RESEARCH.md)
 
+![ApplyPilot React workspace](docs/assets/applypilot-workspace.jpg)
+
 ## What you can do
 
 - **Find live jobs** — Search a company's Greenhouse board by keyword and open the original posting.

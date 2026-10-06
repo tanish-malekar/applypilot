@@ -8,9 +8,13 @@ Create the GitHub repository first and share its URL. Build a working POC with a
 
 ## Day 2 — October 7, 2026, 10:00 AM
 
+Complete the user-confirmed application-content scope: separate generated text resume, cover letter, and answers to explicit application questions. Use verified profile facts and cite their evidence; do not invent applicant experience, skills, achievements, or answers. Keep unsupported answers unresolved for human input. Show the three outputs in the existing workspace, require human review, and use them in the built-in form autofill/upload workflow. Add meaningful content-grounding, missing-answer, and prompt-injection evals alongside the existing guardrails. Preserve the current LangGraph/LangChain/FastAPI/Playwright stack and one-source scope.
+
 Improve the existing **single Greenhouse source**, rather than adding more providers. Priorities: provenance and conservative requirement extraction; test sponsorship ambiguity and graduation/experience language; applicant memory retrieval beyond exact field reuse; browser handling for an alternate local form layout; a small labeled ingestion/memory evaluation set. Preserve the simple UI. Test, record evidence in PROGRESS.md, commit and push. If deployment remains pending and credentials are available, complete it and verify live functionality. Keep hosting/model choices free; do not upgrade plans. Maintain the deployed service through its GitHub integration.
 
 ## Day 3 — October 8, 2026, 10:00 AM
+
+Integrate optional LangSmith tracing for workflow/model execution, timing, and failure visibility. Use the Developer free allowance with a hard usage limit; do not enable billing or paid features. Request the user's LangSmith API key through secret settings when activation is required, and verify an actual trace in the user's workspace before claiming live tracing. Keep applicant text, personal fields, and credentials out of telemetry through explicit input/output redaction; use fictional fixtures for hosted verification. Missing tracing credentials must not prevent the application workflow from functioning, and pending activation must be reported accurately.
 
 Evaluate the integrated POC on the local form variants and labeled synthetic job cases. Report completion rate, field correctness, interventions, failures, and grounding checks with dataset size and limitations. Add failure taxonomy, demonstration instructions, and final README polish. Fix observed failures, verify the live site when available, test, commit and push. Disable the two-day build automation when milestones are complete.
 

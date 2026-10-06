@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Application sandbox</title><style>
+body{font:16px system-ui;background:#f1f5f9;color:#182334;margin:0}main{max-width:700px;margin:40px auto;background:white;padding:36px;border-radius:16px}label{display:block;margin:20px 0 8px;font-weight:600}input,textarea,select{box-sizing:border-box;width:100%;padding:12px;border:1px solid #bbc6d5;border-radius:7px;font:inherit}textarea{min-height:200px}button{margin-top:25px;background:#175d50;color:white;padding:15px;border:0;border-radius:8px;font:inherit}aside{background:#eef7f3;padding:12px;border-radius:8px}#receipt{margin-top:20px;overflow-wrap:anywhere}
+</style></head><body><main><aside>Research sandbox · Fictional application · Local submission only</aside><h1>Apply to __COMPANY__</h1><p>__TITLE__ · This form provides a controlled ATS execution environment.</p>
+<form id="application">
+<label for="name">Full name</label><input id="name" name="name" required>
+<label for="email">Email address</label><input id="email" name="email" type="email" required>
+<label for="location">Location</label><input id="location" name="location">
+<label for="work_authorized">Authorized to work</label><select id="work_authorized" name="work_authorized"><option value="">Choose</option><option value="yes">Yes</option><option value="no">No</option></select>
+<label for="needs_sponsorship">Need sponsorship</label><select id="needs_sponsorship" name="needs_sponsorship"><option value="">Choose</option><option value="yes">Yes</option><option value="no">No</option></select>
+<label for="cover_letter">Application statement</label><textarea id="cover_letter" name="cover_letter" required></textarea>
+<label for="resume">Resume document</label><input id="resume" name="resume" type="file" accept=".txt" required>
+<button type="submit">Submit sandbox application</button>
+</form><div id="receipt" data-testid="receipt" hidden></div><div id="error" role="alert"></div>
+</main><script>
+document.querySelector('form').addEventListener('submit', async event => {
+ event.preventDefault(); const form = event.target;
+ const fields = Object.fromEntries(['name','email','location','work_authorized','needs_sponsorship','cover_letter'].map(key => [key, form.elements[key].value]));
+ try {const response=await fetch('/sandbox/__RUN_ID__/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields,resume_name:form.elements.resume.files[0].name})});
+ const data=await response.json();if(!response.ok)throw new Error(data.detail);
+ const receipt=document.querySelector('#receipt');receipt.textContent=data.receipt_id;receipt.hidden=false;form.querySelector('button').disabled=true;
+ } catch(error){document.querySelector('#error').textContent=error.message;}
+});
+</script></body></html>

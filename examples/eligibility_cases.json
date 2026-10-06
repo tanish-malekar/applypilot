@@ -1,0 +1,18 @@
+[
+ {"id":"eligible_baseline","job_index":0,"expected":"eligible"},
+ {"id":"experience_and_clearance_fail","job_index":1,"expected":"ineligible"},
+ {"id":"unknown_employer_sponsorship","job_index":2,"expected":"needs_information"},
+ {"id":"missing_authorization","job_index":0,"applicant_patch":{"work_authorized":null},"expected":"needs_information"},
+ {"id":"authorization_false","job_index":0,"applicant_patch":{"work_authorized":false},"expected":"ineligible"},
+ {"id":"no_sponsorship_needed","job_index":2,"applicant_patch":{"needs_sponsorship":false},"expected":"eligible"},
+ {"id":"graduation_before_window","job_index":0,"applicant_patch":{"graduation_date":"2026-11-30"},"expected":"ineligible"},
+ {"id":"graduation_start_inclusive","job_index":0,"applicant_patch":{"graduation_date":"2026-12-01"},"expected":"eligible"},
+ {"id":"graduation_end_inclusive","job_index":0,"applicant_patch":{"graduation_date":"2027-08-31"},"expected":"eligible"},
+ {"id":"graduation_after_window","job_index":0,"applicant_patch":{"graduation_date":"2027-09-01"},"expected":"ineligible"},
+ {"id":"missing_degree","job_index":0,"applicant_patch":{"degree":null},"expected":"needs_information"},
+ {"id":"degree_insufficient","job_index":0,"applicant_patch":{"degree":"high_school"},"expected":"ineligible"},
+ {"id":"location_fail","job_index":0,"applicant_patch":{"location":"Canada"},"expected":"ineligible"},
+ {"id":"zero_experience_boundary","job_index":0,"applicant_patch":{"experience_years":0},"expected":"eligible"},
+ {"id":"missing_sponsorship_need","job_index":0,"applicant_patch":{"needs_sponsorship":null},"expected":"needs_information"},
+ {"id":"explicit_no_sponsorship","job_index":0,"job_patch":{"offers_sponsorship":false},"expected":"ineligible"}
+]

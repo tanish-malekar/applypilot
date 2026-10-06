@@ -1,0 +1,7 @@
+{
+  "id": "demo-alex", "name": "Alex Morgan", "email": "alex@example.com",
+  "degree": "masters", "graduation_date": "2027-05-15", "experience_years": 1,
+  "location": "United States", "work_authorized": true, "needs_sponsorship": true,
+  "has_clearance": false, "skills": ["Python", "LangGraph", "FastAPI", "PyTorch"],
+  "accomplishments": ["Built a university prototype that routes tasks through specialized agents."]
+}

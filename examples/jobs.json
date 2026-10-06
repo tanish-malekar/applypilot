@@ -1,0 +1,23 @@
+[
+  {
+    "id": "demo-ml-001", "title": "Applied ML Engineer Intern", "company": "Northstar Demo Labs",
+    "description": "Build Python agent workflows with LangGraph, evaluate reliability, and expose APIs.",
+    "skills": ["Python", "LangGraph", "FastAPI"], "min_degree": "bachelors",
+    "graduation_start": "2026-12-01", "graduation_end": "2027-08-31",
+    "min_experience_years": 0, "allowed_locations": ["United States"],
+    "requires_work_authorization": true, "offers_sponsorship": true, "requires_clearance": false
+  },
+  {
+    "id": "demo-ml-002", "title": "ML Engineer, Secure Systems", "company": "Secure Demo Labs",
+    "description": "Build ML systems requiring clearance and five years of experience.",
+    "skills": ["Python", "PyTorch"], "min_degree": "bachelors", "min_experience_years": 5,
+    "allowed_locations": ["United States"], "offers_sponsorship": false, "requires_clearance": true
+  },
+  {
+    "id": "demo-ml-003", "title": "Agent Engineer, New Grad", "company": "Orbit Demo Labs",
+    "description": "Create stateful browser agents. Sponsorship policy has not been provided.",
+    "skills": ["Python", "Playwright"], "min_degree": "bachelors",
+    "min_experience_years": 0, "allowed_locations": ["United States"],
+    "offers_sponsorship": null, "requires_clearance": false
+  }
+]

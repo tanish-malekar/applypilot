@@ -1,0 +1,307 @@
+import operator
+import sqlite3
+import threading
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Annotated, TypedDict
+from uuid import uuid4
+
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.graph import END, START, StateGraph
+from langgraph.types import Command, interrupt
+
+from job_agents.browser import SandboxBrowser, expected_fields
+from job_agents.content import generate, verify_content
+from job_agents.eligibility import evaluate
+from job_agents.models import (
+    Applicant,
+    Eligibility,
+    Job,
+    PreparedContent,
+    ProfileAnswers,
+    ReviewDecision,
+    RunRequest,
+)
+from job_agents.storage import Store
+
+
+class State(TypedDict, total=False):
+    run_id: str
+    applicant: dict
+    job: dict
+    status: str
+    eligibility: dict
+    content: dict
+    browser: dict
+    verification: dict
+    decision: dict
+    receipt: str
+    trace: Annotated[list[dict], operator.add]
+
+
+def event(agent: str, message: str):
+    return [{"agent": agent, "message": message, "at": datetime.now(timezone.utc).isoformat()}]
+
+
+class Workflow:
+    def __init__(
+        self,
+        directory: Path,
+        base_url="http://127.0.0.1:8000",
+        content_mode="deterministic",
+        browser=None,
+    ):
+        self.store = Store(directory)
+        self.browser = browser or SandboxBrowser(base_url, directory)
+        self.content_mode = content_mode
+        self.connection = sqlite3.connect(directory / "checkpoints.sqlite", check_same_thread=False)
+        self.lock = threading.RLock()
+        self.graph = self.build().compile(checkpointer=SqliteSaver(self.connection))
+
+    def close(self):
+        self.connection.close()
+
+    def build(self):
+        graph = StateGraph(State)
+        for name in [
+            "discovery",
+            "memory",
+            "eligibility",
+            "missing_information",
+            "content",
+            "application",
+            "verification",
+            "review",
+            "auto_apply",
+            "finish",
+        ]:
+            graph.add_node(name, getattr(self, name))
+        graph.add_edge(START, "discovery")
+        graph.add_edge("discovery", "memory")
+        graph.add_edge("memory", "eligibility")
+        graph.add_conditional_edges("eligibility", self.route_eligibility)
+        graph.add_edge("missing_information", "eligibility")
+        graph.add_conditional_edges(
+            "content", lambda s: "finish" if s["status"] == "failed" else "application"
+        )
+        graph.add_conditional_edges(
+            "application", lambda s: "finish" if s["status"] == "failed" else "verification"
+        )
+        graph.add_conditional_edges(
+            "verification", lambda s: "review" if s["verification"]["passed"] else "finish"
+        )
+        graph.add_conditional_edges(
+            "review", lambda s: "auto_apply" if s["decision"]["approved"] else "finish"
+        )
+        graph.add_edge("auto_apply", "finish")
+        graph.add_edge("finish", END)
+        return graph
+
+    def discovery(self, state):
+        job = Job.model_validate(state["job"])
+        return {
+            "job": job.model_dump(mode="json"),
+            "status": "running",
+            "trace": event("discovery", f"Normalized job {job.id} from {job.source}."),
+        }
+
+    def memory(self, state):
+        profile = dict(state["applicant"])
+        cached = self.store.recall(profile["id"])
+        reused = []
+        for field, value in cached.items():
+            if field in ProfileAnswers.model_fields and profile.get(field) is None:
+                profile[field] = value
+                reused.append(field)
+        applicant = Applicant.model_validate(profile)
+        return {
+            "applicant": applicant.model_dump(mode="json"),
+            "trace": event("memory", f"Reused human-provided fields: {reused}."),
+        }
+
+    def eligibility(self, state):
+        result = evaluate(
+            Applicant.model_validate(state["applicant"]), Job.model_validate(state["job"])
+        )
+        return {
+            "eligibility": result.model_dump(mode="json"),
+            "trace": event("eligibility", result.status),
+        }
+
+    def route_eligibility(self, state):
+        result = Eligibility.model_validate(state["eligibility"])
+        if result.status == "eligible":
+            return "content"
+        if result.status == "ineligible":
+            return "finish"
+        # Unknown employer policy must be resolved from a source, not invented applicant facts.
+        if any(c.status == "unknown" and c.missing_profile_field is None for c in result.checks):
+            return "finish"
+        return "missing_information"
+
+    def missing_information(self, state):
+        fields = sorted(
+            {
+                c["missing_profile_field"]
+                for c in state["eligibility"]["checks"]
+                if c["missing_profile_field"]
+            }
+        )
+        answers = interrupt(
+            {
+                "kind": "missing_information",
+                "fields": fields,
+                "message": "Provide missing applicant facts to continue.",
+            }
+        )
+        parsed = ProfileAnswers.model_validate(answers).model_dump(mode="json", exclude_none=True)
+        if set(parsed) != set(fields):
+            raise ValueError(f"Provide exactly the requested missing fields: {fields}")
+        profile = {**state["applicant"], **parsed}
+        validated = Applicant.model_validate(profile)
+        self.store.remember(validated.id, parsed)
+        return {
+            "applicant": validated.model_dump(mode="json"),
+            "trace": event("memory", f"Stored human-provided facts: {fields}."),
+        }
+
+    def content(self, state):
+        try:
+            content = generate(
+                Applicant.model_validate(state["applicant"]),
+                Job.model_validate(state["job"]),
+                self.content_mode,
+            )
+            return {
+                "content": content.model_dump(mode="json"),
+                "trace": event("content", f"Selected {len(content.fact_ids)} grounded facts."),
+            }
+        except Exception as exc:
+            return {"status": "failed", "trace": event("content", f"{type(exc).__name__}: {exc}")}
+
+    def application(self, state):
+        try:
+            result = self.browser.prepare(
+                state["run_id"],
+                Applicant.model_validate(state["applicant"]),
+                PreparedContent.model_validate(state["content"]),
+            )
+            return {"browser": result, "trace": event("application", "Filled local sandbox form.")}
+        except Exception as exc:
+            return {
+                "status": "failed",
+                "trace": event("application", f"{type(exc).__name__}: {exc}"),
+            }
+
+    def verification(self, state):
+        applicant = Applicant.model_validate(state["applicant"])
+        content = PreparedContent.model_validate(state["content"])
+        errors = verify_content(applicant, content)
+        expected = expected_fields(applicant, content)
+        observed = state["browser"].get("fields", {})
+        errors += [
+            f"Field mismatch: {key}"
+            for key, value in expected.items()
+            if observed.get(key) != value
+        ]
+        errors += state["browser"].get("errors", [])
+        if state["browser"].get("upload") != ["resume.txt"]:
+            errors.append("Resume upload was not verified.")
+        return {
+            "verification": {"passed": not errors, "errors": errors},
+            "status": "awaiting_review" if not errors else "verification_failed",
+            "trace": event("verification", "Passed." if not errors else "; ".join(errors)),
+        }
+
+    def review(self, state):
+        response = interrupt(
+            {
+                "kind": "review",
+                "message": "Review the local sandbox application.",
+                "content": state["content"]["text"],
+                "fields": state["browser"]["fields"],
+            }
+        )
+        decision = ReviewDecision.model_validate(response)
+        return {
+            "decision": decision.model_dump(),
+            "status": "approved" if decision.approved else "rejected",
+            "trace": event("review", "Approved." if decision.approved else "Rejected."),
+        }
+
+    def auto_apply(self, state):
+        try:
+            if not state["verification"]["passed"] or not state["decision"]["approved"]:
+                raise ValueError("Submission prerequisites were not met.")
+            result = self.browser.submit(
+                state["run_id"],
+                Applicant.model_validate(state["applicant"]),
+                PreparedContent.model_validate(state["content"]),
+            )
+            if not result.get("receipt"):
+                raise ValueError("Sandbox submission did not return a receipt.")
+            return {
+                "status": "submitted",
+                "receipt": result["receipt"],
+                "browser": result,
+                "trace": event("auto_apply", "Submitted verified local application."),
+            }
+        except Exception as exc:
+            return {
+                "status": "failed",
+                "trace": event("auto_apply", f"{type(exc).__name__}: {exc}"),
+            }
+
+    def finish(self, state):
+        status = state["status"]
+        if status == "running":
+            status = "ineligible" if state["eligibility"]["status"] == "ineligible" else "blocked"
+        return {"status": status, "trace": event("tracking", f"Recorded outcome: {status}.")}
+
+    def config(self, run_id):
+        return {"configurable": {"thread_id": run_id}, "recursion_limit": 50}
+
+    def snapshot(self, run_id):
+        snapshot = self.graph.get_state(self.config(run_id))
+        if not snapshot.values:
+            raise KeyError(run_id)
+        result = dict(snapshot.values)
+        pending = [i.value for task in snapshot.tasks for i in task.interrupts]
+        result["pending"] = pending
+        if pending:
+            result["status"] = (
+                "needs_information"
+                if pending[0]["kind"] == "missing_information"
+                else "awaiting_review"
+            )
+        self.store.save_run(run_id, result)
+        return result
+
+    def start(self, request: RunRequest):
+        run_id = str(uuid4())
+        with self.lock:
+            self.graph.invoke(
+                {
+                    "run_id": run_id,
+                    "applicant": request.applicant.model_dump(mode="json"),
+                    "job": request.job.model_dump(mode="json"),
+                    "trace": [],
+                },
+                self.config(run_id),
+            )
+            return self.snapshot(run_id)
+
+    def resume(self, run_id: str, answer: dict):
+        with self.lock:
+            current = self.snapshot(run_id)
+            if not current["pending"]:
+                raise ValueError("Run is not waiting for input.")
+            pending = current["pending"][0]
+            if pending["kind"] == "review":
+                ReviewDecision.model_validate(answer)
+            else:
+                parsed = ProfileAnswers.model_validate(answer).model_dump(exclude_none=True)
+                if set(parsed) != set(pending["fields"]):
+                    raise ValueError(f"Provide exactly these fields: {pending['fields']}")
+            self.graph.invoke(Command(resume=answer), self.config(run_id))
+            return self.snapshot(run_id)

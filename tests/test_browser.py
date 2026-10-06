@@ -39,13 +39,23 @@ def test_react_profile_missing_fact_approval_and_history():
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
         page.goto("http://127.0.0.1:8000")
+        page.get_by_label("Search by title or company").fill("Secure")
+        expect(
+            page.get_by_role("button", name="Prepare application for ML Engineer, Secure Systems")
+        ).to_be_visible()
+        expect(
+            page.get_by_role("button", name="Prepare application for Applied ML Engineer Intern")
+        ).to_have_count(0)
+        page.get_by_role("button", name="Clear search").click()
         page.get_by_role("button", name="My profile", exact=True).click()
         page.get_by_label("Full name", exact=True).fill("Taylor Sample")
         page.get_by_label("Email", exact=True).fill("taylor@example.com")
         page.get_by_text("Explore the workflow", exact=True).click()
         page.get_by_label("Try a missing work-authorization fact").check()
         page.get_by_role("button", name="Save profile", exact=True).click()
-        page.get_by_role("button", name="Prepare application", exact=True).click()
+        page.get_by_role(
+            "button", name="Prepare application for Applied ML Engineer Intern", exact=True
+        ).click()
         expect(page.get_by_text("A little help from you", exact=True)).to_be_visible(timeout=90000)
         page.get_by_label("work authorized", exact=True).select_option("true")
         page.get_by_role("button", name="Save facts & continue", exact=True).click()
@@ -62,6 +72,16 @@ def test_react_profile_missing_fact_approval_and_history():
         )
         page.reload()
         page.get_by_role("button", name="Applications 1", exact=True).click()
+        page.get_by_role("button", name="Submitted", exact=True).click()
+        expect(page.locator(".applications .history-item")).to_have_count(1)
+        page.get_by_role("button", name="Blocked", exact=True).click()
+        expect(page.locator(".applications .history-item")).to_have_count(0)
+        expect(page.get_by_text("No applications match this view.")).to_be_visible()
+        page.get_by_role("button", name="All", exact=True).click()
+        page.set_viewport_size({"width": 390, "height": 844})
+        assert page.evaluate(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+        )
         page.locator(".applications .history-item").click()
         expect(page.get_by_text("Application submitted to the sandbox", exact=True)).to_be_visible(
             timeout=90000

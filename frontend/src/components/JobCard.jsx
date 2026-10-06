@@ -1,51 +1,45 @@
-import { Check, MapPin } from "lucide-react";
+import { ArrowUpRight, MapPin } from "lucide-react";
 import { initials } from "../lib/ui.js";
 
-export default function JobCard({ job, selected, onSelect, disabled, index }) {
+export default function JobCard({ job, onPrepare, disabled, index }) {
   return (
-    <label className={"job-card " + (selected ? "selected" : "")}>
-      <input
-        type="radio"
-        name="job"
-        checked={selected}
-        onChange={onSelect}
-        disabled={disabled}
-        aria-label={job.title + " at " + job.company}
-      />
-      <span className={"company-logo tone-" + (index % 3)} aria-hidden="true">
-        {initials(job.company)}
-      </span>
-      <div className="job-content">
-        <div className="job-heading">
-          <h3>{job.title}</h3>
-          <span className="selection-mark">
-            <Check size={12} />
-          </span>
+    <article className={"job-card tone-" + (index % 4)}>
+      <div className="job-face">
+        <div className="job-topline">
+          <span>{job.company}</span>
+          <ArrowUpRight size={20} />
         </div>
-        <p className="company-name">{job.company}</p>
+        <h3>{job.title}</h3>
         <div className="job-meta">
+          <MapPin size={14} />
           <span>
-            <MapPin size={12} />
             {job.source_location ||
               job.allowed_locations?.join(", ") ||
               "Location not specified"}
           </span>
-          <span
-            className={
-              "source-label " + (job.source === "greenhouse" ? "live" : "")
-            }
-          >
-            {job.source === "greenhouse" ? "Greenhouse" : "Sample role"}
-          </span>
         </div>
-        {job.skills?.length > 0 && (
-          <div className="skill-tags">
-            {job.skills.slice(0, 3).map((skill) => (
-              <span key={skill}>{skill}</span>
-            ))}
-          </div>
-        )}
+        <div className="skill-tags">
+          {job.skills?.slice(0, 3).map((skill) => (
+            <span key={skill}>{skill}</span>
+          ))}
+        </div>
       </div>
-    </label>
+      <div className="job-footer">
+        <span className="company-logo" aria-hidden="true">
+          {initials(job.company)}
+        </span>
+        <span className="job-source">
+          {job.source === "greenhouse" ? "Greenhouse" : "Sample role"}
+        </span>
+        <button
+          className="apply-button"
+          onClick={onPrepare}
+          disabled={disabled}
+          aria-label={"Prepare application for " + job.title}
+        >
+          Prepare <ArrowUpRight size={14} />
+        </button>
+      </div>
+    </article>
   );
 }

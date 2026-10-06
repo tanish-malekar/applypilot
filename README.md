@@ -24,10 +24,10 @@ The hosted application connects to live Greenhouse listings and executes applica
 ## Try the platform
 
 1. Open [ApplyPilot](https://job-application-agents.onrender.com) and review or edit the sample applicant.
-2. Select a sample job to exercise the complete workflow, or use **Find jobs** to search a live Greenhouse board. The default board is `arvaintelligence`.
-3. Choose **Prepare application**. Inspect the eligibility checks, grounded content, agent trace, and browser screenshot.
+2. Open **Browse jobs** to search a live Greenhouse board, or use a sample role to explore the complete workflow. The default board is `arvaintelligence`.
+3. Choose **Prepare** on a job card. Inspect the eligibility checks, grounded content, agent trace, and browser screenshot.
 4. Supply any missing applicant facts, then approve or reject the prepared sandbox application.
-5. Find the result and receipt under **Recent applications**.
+5. Find the result and receipt in the **All applications** table. Filter by status or open an application to inspect its evidence.
 
 A Greenhouse board token is the company segment in its job-board URL. Live requirement extraction is conservative: inspect the original posting for requirements that were not parsed. Unknown sponsorship policy blocks an applicant who needs sponsorship.
 

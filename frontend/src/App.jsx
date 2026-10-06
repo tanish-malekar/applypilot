@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
-  BriefcaseBusiness,
-  Check,
   ChevronRight,
   CircleAlert,
-  Clock3,
+  FileCheck2,
   FileText,
-  History,
+  HelpCircle,
   LayoutDashboard,
   LoaderCircle,
   Search,
@@ -19,11 +17,37 @@ import {
   X,
 } from "lucide-react";
 import { api } from "./api.js";
-import { pretty, initials } from "./lib/ui.js";
+import { initials } from "./lib/ui.js";
 import ProfileDialog from "./components/ProfileDialog.jsx";
 import JobCard from "./components/JobCard.jsx";
 import Workspace from "./components/Workspace.jsx";
 import ApplicationHistory from "./components/ApplicationHistory.jsx";
+
+function StudioDialog({ open, onClose, children }) {
+  const dialog = useRef(null);
+  useEffect(() => {
+    if (open && !dialog.current.open) dialog.current.showModal();
+    else if (!open && dialog.current.open) dialog.current.close();
+  }, [open]);
+  return (
+    <dialog
+      ref={dialog}
+      className="studio-dialog"
+      aria-label="Application workspace"
+      onCancel={onClose}
+      onClose={onClose}
+    >
+      <button
+        className="icon-button studio-close"
+        aria-label="Close application"
+        onClick={onClose}
+      >
+        <X size={21} />
+      </button>
+      {children}
+    </dialog>
+  );
+}
 
 export default function App() {
   const [demo, setDemo] = useState(null);
@@ -40,8 +64,12 @@ export default function App() {
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
   const [missing, setMissing] = useState(false);
   const [view, setView] = useState("overview");
+  const [filter, setFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -65,30 +93,58 @@ export default function App() {
       active = false;
     };
   }, []);
-
   const selectedJob = jobs.find((job) => job.id === selected);
-  const reviews = runs.filter(
-    (item) => item.status === "awaiting_review",
-  ).length;
+  const needsYou = (item) =>
+    [
+      "awaiting_review",
+      "needs_information",
+      "awaiting_information",
+      "awaiting_facts",
+    ].includes(item.status);
+  const reviews = runs.filter(needsYou).length;
+  const match = (job) =>
+    (job.title + " " + job.company)
+      .toLowerCase()
+      .includes(filter.toLowerCase().trim());
+  const visibleJobs = jobs.filter(match);
+  const visibleRuns = runs.filter(
+    (item) =>
+      match(item.job) &&
+      (statusFilter === "All" ||
+        (statusFilter === "Needs you"
+          ? needsYou(item)
+          : statusFilter === "Submitted"
+            ? item.status === "submitted"
+            : [
+                "ineligible",
+                "blocked",
+                "failed",
+                "verification_failed",
+                "rejected",
+              ].includes(item.status))),
+  );
   async function acceptRun(result) {
     setRun(result);
     setRuns(await api("/api/runs"));
   }
-  async function start() {
-    if (!selectedJob || !applicant || busy) return;
+  async function start(job = selectedJob) {
+    if (!job || !applicant || busy) return;
+    setSelected(job.id);
+    setRun(null);
+    setStudioOpen(true);
     setBusy(true);
     setError("");
     setFeedback("");
     try {
-      const profile = {
-        ...applicant,
-        ...(missing ? { work_authorized: null } : {}),
-      };
-      const result = await api("/api/runs", {
-        applicant: profile,
-        job: selectedJob,
-      });
-      await acceptRun(result);
+      await acceptRun(
+        await api("/api/runs", {
+          applicant: {
+            ...applicant,
+            ...(missing ? { work_authorized: null } : {}),
+          },
+          job,
+        }),
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -123,6 +179,7 @@ export default function App() {
       setJobs(data.jobs);
       setSelected(data.jobs[0]?.id || "");
       setSource("greenhouse");
+      setFilter("");
       setFeedback(
         data.jobs.length + " live opportunities from " + data.board + ".",
       );
@@ -137,11 +194,13 @@ export default function App() {
     setJobs(demo.jobs);
     setSelected(demo.jobs[0]?.id || "");
     setSource("sample");
+    setFilter("");
     setFeedback("");
     setError("");
   }
   async function openRun(id) {
     if (busy) return;
+    setStudioOpen(true);
     setBusy(true);
     setError("");
     try {
@@ -152,7 +211,12 @@ export default function App() {
       setBusy(false);
     }
   }
-
+  const title =
+    view === "overview"
+      ? "Dashboard"
+      : view === "jobs"
+        ? "Browse jobs"
+        : "Applications";
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
@@ -161,73 +225,103 @@ export default function App() {
       <aside className="sidebar">
         <a href="#main" className="brand" onClick={() => setView("overview")}>
           <span className="brand-mark">
-            <Send size={22} strokeWidth={1.8} />
+            <Send size={21} />
           </span>
-          ApplyPilot<span className="brand-dot">.</span>
+          ApplyPilot
         </a>
-        <span className="nav-label">YOUR WORKSPACE</span>
+        <span className="nav-label">WORKSPACE</span>
         <nav aria-label="Main navigation">
           <button
             className={"nav-item " + (view === "overview" ? "active" : "")}
             onClick={() => setView("overview")}
           >
-            <LayoutDashboard size={18} /> Overview <ChevronRight size={14} />
+            <LayoutDashboard size={20} /> Dashboard
+          </button>
+          <button
+            className={"nav-item " + (view === "jobs" ? "active" : "")}
+            onClick={() => setView("jobs")}
+          >
+            <Search size={20} /> Browse jobs
           </button>
           <button
             className={"nav-item " + (view === "applications" ? "active" : "")}
             onClick={() => setView("applications")}
           >
-            <BriefcaseBusiness size={18} /> Applications{" "}
+            <FileText size={20} /> Applications{" "}
             <span className="nav-count">{runs.length}</span>
           </button>
+          <button
+            className="nav-item"
+            disabled={!reviews || busy}
+            onClick={() => {
+              setStatusFilter("Needs you");
+              setView("applications");
+            }}
+          >
+            <FileCheck2 size={20} /> Needs you{" "}
+            <span className="nav-count">{reviews}</span>
+          </button>
+          <div className="nav-divider" />
           <button
             className="nav-item"
             disabled={!applicant || busy}
             onClick={() => setProfileOpen(true)}
           >
-            <UserRound size={18} /> My profile <ArrowUpRight size={14} />
+            <UserRound size={20} /> My profile
           </button>
         </nav>
         <div className="sidebar-bottom">
-          <div className="copilot-note">
-            <span className="note-icon">
-              <Sparkles size={19} />
-            </span>
-            <b>A copilot, not autopilot.</b>
-            <p>
-              Your agents do the busywork.
-              <br />
-              You always make the final call.
-            </p>
+          <div className="sandbox-label">
+            <span /> Sandbox workspace
           </div>
-          <div className="sandbox-note">
-            <span />
-            Sandbox workspace <ShieldCheck size={14} />
-          </div>
-          <a
-            className="sidebar-link"
-            href="https://github.com/tanish-malekar/applypilot"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            className="support-card"
+            onClick={() => setHelpOpen(!helpOpen)}
+            aria-expanded={helpOpen}
           >
-            About ApplyPilot <ArrowUpRight size={13} />
-          </a>
+            <span>
+              <HelpCircle size={21} />
+            </span>
+            <div>
+              <b>Help & support</b>
+              <small>How ApplyPilot works</small>
+            </div>
+          </button>
         </div>
       </aside>
       <div className="main-shell">
         <header className="topbar">
-          <div className="breadcrumb">
-            Workspace <ChevronRight size={13} />
-            <strong>{view === "overview" ? "Overview" : "Applications"}</strong>
-          </div>
+          <h1>{title}</h1>
+          <label className="global-search">
+            <Search size={21} />
+            <input
+              aria-label="Search by title or company"
+              placeholder="Search by title, company..."
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+            />
+            {filter && (
+              <button
+                className="icon-button"
+                aria-label="Clear search"
+                onClick={() => setFilter("")}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </label>
           <div className="topbar-right">
-            <span className="review-enabled">
-              <ShieldCheck size={14} /> Human review enabled
-            </span>
+            <button
+              className="icon-button help-button"
+              aria-label="How it works"
+              onClick={() => setHelpOpen(!helpOpen)}
+            >
+              <HelpCircle size={21} />
+            </button>
             <button
               className="avatar-button"
-              onClick={() => setProfileOpen(true)}
               disabled={!applicant || busy}
+              onClick={() => setProfileOpen(true)}
               aria-label="Edit applicant profile"
             >
               {initials(applicant?.name)}
@@ -235,321 +329,278 @@ export default function App() {
           </div>
         </header>
         <main id="main">
-          <div className="hero">
-            <div>
-              <div className="eyebrow">
-                <span className="small-line" /> YOUR APPLICATION COPILOT
-              </div>
-              <h1>
-                Less busywork.
-                <br />
-                <span>More possibility.</span>
-              </h1>
-              <p>
-                Find the right opportunity. Let your agents handle the details.
-                <br className="desktop-break" /> Make your next move with
-                confidence.
-              </p>
-            </div>
-            <div className="hero-visual" aria-hidden="true">
-              <div className="hero-orbit" />
-              <div className="hero-orbit inner" />
-              <div className="hero-core">
-                <Send size={30} strokeWidth={1.4} />
-              </div>
-              <div className="visual-label discover">
-                <Search size={14} /> Discover
-              </div>
-              <div className="visual-label prepare">
-                <FileText size={14} /> Prepare
-              </div>
-              <div className="visual-label review">
-                <ShieldCheck size={14} /> Review
-              </div>
-              <span className="visual-dot one" />
-              <span className="visual-dot two" />
-            </div>
-          </div>
-          <div className="metrics">
-            <div className="metric">
-              <span className="metric-icon violet">
-                <BriefcaseBusiness size={19} />
-              </span>
+          {helpOpen && (
+            <section className="help-panel">
               <div>
-                <span>Opportunities</span>
-                <b>
-                  {demo ? jobs.length : "—"}{" "}
-                  <small>
-                    {source === "sample" ? "sample roles" : "live roles"}
-                  </small>
-                </b>
+                <h2>A little help with your next move.</h2>
+                <p>
+                  Choose a sample role or browse a Greenhouse job board. Your
+                  agents check your profile, prepare a fact-grounded statement,
+                  and fill a sandbox application. Review the evidence before
+                  approving. Employer applications are not submitted.
+                </p>
+                <a
+                  className="text-link"
+                  href="https://github.com/tanish-malekar/applypilot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Read the guide <ArrowUpRight size={15} />
+                </a>
               </div>
-            </div>
-            <div className="metric">
-              <span className="metric-icon peach">
-                <FileText size={19} />
-              </span>
-              <div>
-                <span>Your applications</span>
-                <b>
-                  {runs.length} <small>in this workspace</small>
-                </b>
+              <button
+                className="icon-button"
+                aria-label="Close help"
+                onClick={() => setHelpOpen(false)}
+              >
+                <X size={20} />
+              </button>
+            </section>
+          )}
+          {view === "overview" && !filter && (
+            <section className="hero">
+              <div className="hero-copy">
+                <span className="hero-eyebrow">
+                  <Sparkles size={14} /> YOUR NEXT CHAPTER STARTS HERE
+                </span>
+                <h2>
+                  Your ambition.
+                  <br />A little less busywork.
+                </h2>
+                <p>
+                  Find an opportunity. Let your agents prepare the details.
+                  <br />
+                  You stay in control of every application.
+                </p>
+                <button className="hero-button" onClick={() => setView("jobs")}>
+                  Explore opportunities <ArrowRight size={17} />
+                </button>
               </div>
-            </div>
-            <div className="metric">
-              <span className="metric-icon mint">
-                <Clock3 size={19} />
-              </span>
-              <div>
-                <span>Awaiting your review</span>
-                <b>
-                  {reviews}{" "}
-                  <small>
-                    {reviews === 1 ? "application" : "applications"}
-                  </small>
-                </b>
+              <div className="hero-art" aria-hidden="true">
+                <div className="orbit-ring" />
+                <div className="orbit-ring inner" />
+                <span className="hero-star star-one">✧</span>
+                <span className="hero-star star-two">✧</span>
+                <div className="hero-document">
+                  <div className="document-icon">
+                    <UserRound size={23} />
+                  </div>
+                  <span className="art-line long" />
+                  <span className="art-line" />
+                  <span className="art-line long" />
+                  <span className="art-line" />
+                  <div className="art-ready">
+                    <ShieldCheck size={16} /> Ready for your review
+                  </div>
+                </div>
+                <div className="hero-stamp">
+                  <ShieldCheck size={17} />
+                  You make the final call
+                </div>
+                <div className="hero-plane">
+                  <Send size={31} strokeWidth={1.4} />
+                </div>
               </div>
-              <span className="metric-status">You're in control</span>
-            </div>
-          </div>
+            </section>
+          )}
           {error && (
-            <div className="alert" role="alert">
+            <div className="error-banner" role="alert">
               <CircleAlert size={18} />
               <span>{error}</span>
               <button
                 className="icon-button"
-                aria-label="Dismiss error"
                 onClick={() => setError("")}
+                aria-label="Dismiss error"
               >
                 <X size={16} />
               </button>
             </div>
           )}
-          {feedback && (
-            <div className="feedback" role="status">
-              <Check size={15} />
-              {feedback}
-            </div>
+          {busy && !studioOpen && (
+            <button
+              className="progress-banner"
+              onClick={() => setStudioOpen(true)}
+            >
+              <LoaderCircle className="spin" size={17} /> Your agents are
+              preparing the application.
+              <span>
+                View progress <ArrowRight size={15} />
+              </span>
+            </button>
           )}
-          <div className="workspace-grid">
-            <div className="left-column">
-              {view === "overview" ? (
-                <section
-                  className="panel opportunities"
-                  aria-labelledby="opportunity-title"
+          {feedback && (
+            <p className="feedback" role="status">
+              {feedback}
+            </p>
+          )}
+          {view !== "applications" && (
+            <section
+              className="opportunities"
+              aria-labelledby="opportunity-title"
+            >
+              <div className="section-heading">
+                <div>
+                  <h2 id="opportunity-title">
+                    {filter ? "Search results" : "Top opportunities"}
+                  </h2>
+                  <span className="section-caption">
+                    {source === "sample"
+                      ? "Sample roles · explore the complete workflow"
+                      : "Live roles from Greenhouse · sandbox preparation"}
+                  </span>
+                </div>
+                <button
+                  className="text-button"
+                  onClick={() => setView(view === "jobs" ? "overview" : "jobs")}
                 >
-                  <div className="panel-heading">
-                    <div>
-                      <span className="eyebrow">EXPLORE WHAT'S NEXT</span>
-                      <h2 id="opportunity-title">Your next opportunity</h2>
-                    </div>
-                    <span className="outline-icon">
-                      <ArrowUpRight size={20} />
-                    </span>
-                  </div>
-                  <div className="source-tabs" aria-label="Job source">
+                  {view === "jobs" ? "Back to dashboard" : "Browse jobs"}
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+              {view === "jobs" && (
+                <div className="source-panel">
+                  <div className="source-tabs">
                     <button
                       className={source === "sample" ? "active" : ""}
                       onClick={samples}
                       disabled={busy || searching}
                     >
-                      Sample roles <span>{demo?.jobs.length || 0}</span>
+                      Sample roles
                     </button>
-                    <button
-                      className={source === "greenhouse" ? "active" : ""}
-                      onClick={search}
-                      disabled={busy || searching || !demo}
-                    >
-                      <span className="live-dot" />
-                      Live Greenhouse
-                    </button>
+                    <span>or find live jobs</span>
                   </div>
-                  <form className="search-form" onSubmit={search}>
+                  <form onSubmit={search}>
                     <label>
-                      Company board
+                      Greenhouse board
                       <input
                         value={board}
                         onChange={(event) => setBoard(event.target.value)}
-                        required
                         placeholder="arvaintelligence"
-                        disabled={busy || searching}
+                        required
                       />
                     </label>
                     <label>
-                      Keywords
-                      <div className="search-input">
-                        <Search size={15} />
-                        <input
-                          value={query}
-                          onChange={(event) => setQuery(event.target.value)}
-                          placeholder="Role or skill"
-                          disabled={busy || searching}
-                        />
-                      </div>
+                      Keyword
+                      <input
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="AI, engineer..."
+                      />
                     </label>
                     <button
-                      type="submit"
-                      className="search-button"
-                      disabled={!demo || busy || searching}
-                      aria-label="Find jobs"
+                      className="primary"
+                      disabled={busy || searching || !demo}
                     >
                       {searching ? (
-                        <LoaderCircle className="spin" size={18} />
+                        <LoaderCircle className="spin" size={16} />
                       ) : (
-                        <ArrowRight size={18} />
-                      )}
+                        <Search size={16} />
+                      )}{" "}
+                      Search jobs
                     </button>
                   </form>
-                  <div className="list-label">
-                    <span>
-                      {source === "sample"
-                        ? "Try the complete workflow with a sample role"
-                        : "Live opportunities · " + jobs.length + " results"}
-                    </span>
-                    {searching && <LoaderCircle className="spin" size={13} />}
-                  </div>
-                  <div className="job-list">
-                    {!demo && !error ? (
-                      <div className="list-empty">
-                        <LoaderCircle className="spin" size={22} />
-                        <p>Loading your workspace…</p>
-                      </div>
-                    ) : jobs.length ? (
-                      jobs.map((job, index) => (
-                        <JobCard
-                          key={job.id}
-                          job={job}
-                          index={index}
-                          selected={job.id === selected}
-                          onSelect={() => setSelected(job.id)}
-                          disabled={busy || searching}
-                        />
-                      ))
-                    ) : (
-                      <div className="list-empty">
-                        <Search size={25} />
-                        <h3>No roles found.</h3>
-                        <p>Try another keyword or company board.</p>
-                        <button className="text-link" onClick={samples}>
-                          Explore sample roles <ArrowRight size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="prepare-footer">
-                    <div>
-                      <ShieldCheck size={15} />
-                      <span>You'll review before anything is submitted.</span>
-                    </div>
-                    <button
-                      className="primary prepare-button"
-                      onClick={start}
-                      disabled={!selectedJob || !applicant || busy || searching}
-                    >
-                      {busy ? (
-                        <>
-                          <LoaderCircle className="spin" size={16} /> Preparing…
-                        </>
-                      ) : (
-                        <>
-                          Prepare application <ArrowRight size={17} />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </section>
-              ) : (
-                <section className="panel applications">
-                  <div className="panel-heading">
-                    <div>
-                      <span className="eyebrow">EVERY STEP, IN ONE PLACE</span>
-                      <h2>Your applications</h2>
-                    </div>
-                    <History size={20} />
-                  </div>
-                  <p className="panel-description">
-                    Open an application to review its checks, activity, and
-                    outcome.
-                  </p>
-                  <ApplicationHistory
-                    runs={runs}
-                    onOpen={openRun}
-                    busy={busy}
-                  />
-                  <button
-                    className="text-link explore-link"
-                    onClick={() => setView("overview")}
-                  >
-                    Explore opportunities <ArrowRight size={15} />
-                  </button>
-                </section>
-              )}
-              <div className="profile-summary">
-                <span className="profile-avatar">
-                  {initials(applicant?.name)}
-                </span>
-                <div>
-                  <b>{applicant?.name || "Your profile"}</b>
-                  <span>
-                    {applicant?.degree ? pretty(applicant.degree) + " · " : ""}
-                    {applicant?.location || "Complete your profile"}
-                  </span>
                 </div>
+              )}
+              <div className="jobs-grid">
+                {!demo && !error
+                  ? [0, 1, 2].map((index) => (
+                      <div
+                        className="job-skeleton"
+                        key={index}
+                        aria-label="Loading opportunities"
+                      />
+                    ))
+                  : visibleJobs.map((job, index) => (
+                      <JobCard
+                        key={job.id}
+                        job={job}
+                        index={index}
+                        onPrepare={() => start(job)}
+                        disabled={busy || searching}
+                      />
+                    ))}
+              </div>
+              {demo && !visibleJobs.length && (
+                <div className="empty-state">
+                  <Search size={25} />
+                  <b>No opportunities found</b>
+                  <p>Try another title, company, or Greenhouse board.</p>
+                </div>
+              )}
+            </section>
+          )}
+          {view !== "jobs" && (
+            <section
+              className="applications"
+              aria-labelledby="applications-title"
+            >
+              <div className="section-heading">
+                <h2 id="applications-title">All applications</h2>
                 <button
-                  className="icon-button"
-                  aria-label="Edit profile"
-                  onClick={() => setProfileOpen(true)}
-                  disabled={!applicant || busy}
+                  className="secondary"
+                  disabled={
+                    !runs.some((item) => item.status === "awaiting_review") ||
+                    busy
+                  }
+                  onClick={() =>
+                    openRun(
+                      runs.find((item) => item.status === "awaiting_review")
+                        .run_id,
+                    )
+                  }
                 >
-                  <ArrowUpRight size={18} />
+                  Review next <ArrowRight size={15} />
                 </button>
               </div>
-              {view === "overview" && (
-                <section className="panel recent-applications">
-                  <div className="small-panel-heading">
-                    <h2>Recent applications</h2>
-                    <button
-                      className="text-link"
-                      onClick={() => setView("applications")}
-                    >
-                      View all <ArrowRight size={14} />
-                    </button>
-                  </div>
-                  <ApplicationHistory
-                    runs={runs.slice(0, 3)}
-                    onOpen={openRun}
-                    busy={busy}
-                    compact
-                  />
-                </section>
-              )}
-            </div>
-            <Workspace
-              run={run}
-              busy={busy}
-              onResume={resume}
-              selectedJob={selectedJob}
-            />
-          </div>
+              <div
+                className="application-filters"
+                role="group"
+                aria-label="Filter applications"
+              >
+                {["All", "Needs you", "Submitted", "Blocked"].map((label) => (
+                  <button
+                    key={label}
+                    className={statusFilter === label ? "active" : ""}
+                    onClick={() => setStatusFilter(label)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <ApplicationHistory
+                runs={visibleRuns}
+                filtered={runs.length > 0}
+                onOpen={openRun}
+                busy={busy}
+              />
+            </section>
+          )}
           <footer className="page-footer">
-            <span>Made for your next chapter.</span>
             <span>
-              ApplyPilot <span className="footer-dot">·</span> Live discovery.
-              Reviewed sandbox applications.
+              <ShieldCheck size={14} /> Prepared by agents. Approved by you.
             </span>
+            <span>Submissions stay in the sandbox.</span>
           </footer>
         </main>
       </div>
+      <StudioDialog open={studioOpen} onClose={() => setStudioOpen(false)}>
+        {error && (
+          <p className="error-banner" role="alert">
+            {error}
+          </p>
+        )}
+        <Workspace
+          run={run}
+          busy={busy}
+          onResume={resume}
+          selectedJob={selectedJob}
+        />
+      </StudioDialog>
       <ProfileDialog
         applicant={applicant}
         open={profileOpen}
         onClose={() => setProfileOpen(false)}
-        onSave={(value) => {
-          setApplicant(value);
-          setFeedback(
-            "Profile updated. Your next application will use these facts.",
-          );
-        }}
+        onSave={setApplicant}
         missing={missing}
         setMissing={setMissing}
       />

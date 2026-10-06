@@ -45,7 +45,7 @@ def validate_base_url(base_url: str):
         or parsed.query
         or parsed.fragment
     ):
-        raise ValueError("Browser POC only supports a loopback HTTP sandbox origin.")
+        raise ValueError("Browser execution requires a loopback HTTP sandbox origin.")
     return parsed
 
 

@@ -34,7 +34,7 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
         yield
         app.state.workflow.close()
 
-    app = FastAPI(title="Job Application Agents", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="ApplyPilot", version="0.1.0", lifespan=lifespan)
 
     admission = threading.BoundedSemaphore(2)
 

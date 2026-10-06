@@ -22,7 +22,7 @@ for case in cases:
     results.append({"id": case["id"], "expected": case["expected"], "actual": result.status})
 labels = ["eligible", "ineligible", "needs_information"]
 report = {
-    "dataset": "synthetic POC scenarios",
+    "dataset": "synthetic eligibility scenarios",
     "n": len(cases),
     "cases": results,
     "classification": classification_report(

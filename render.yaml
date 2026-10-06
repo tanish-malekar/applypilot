@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: job-application-agents
+    name: applypilot
     runtime: docker
     plan: free
     region: ohio

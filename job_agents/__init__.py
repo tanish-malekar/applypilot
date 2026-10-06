@@ -1,1 +1,1 @@
-"""Job Application Agents research POC."""
+"""ApplyPilot job application platform."""

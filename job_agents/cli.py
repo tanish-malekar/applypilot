@@ -9,7 +9,7 @@ from job_agents.models import Applicant, Job
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the local job application POC")
+    parser = argparse.ArgumentParser(description="Run ApplyPilot application workflows")
     parser.add_argument("command", choices=["demo", "eligibility"])
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--applicant", type=Path, default=Path("examples/applicant.json"))

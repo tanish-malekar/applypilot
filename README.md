@@ -1,65 +1,96 @@
-# Job Application Agents
+# ApplyPilot
 
-A small, working research POC for stateful agents that discover jobs, check applicant constraints, prepare grounded content, fill a form in Chromium, verify it, and track a reviewed submission.
+**Discover opportunities. Prepare grounded applications. Stay in control.**
 
-**Live discovery:** Greenhouse public Job Board API. **Application execution:** local ATS sandbox. **AI:** optional Groq Free-plan model or local Ollama; no-key mode uses deterministic facts and labels that choice.
+ApplyPilot is a stateful job-application platform that connects live job discovery with eligibility screening, fact-grounded application content, browser autofill, and human-in-the-loop review. Specialized workflow agents share applicant memory and checkpoints so each application can pause, resume, and leave a clear audit trail.
 
-## Run locally
+[Open ApplyPilot](https://job-application-agents.onrender.com) · [Deployment guide](docs/DEPLOYMENT.md) · [Technology research](docs/STACK_RESEARCH.md)
 
-Python 3.11+:
+## What you can do
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.lock
-pip install --no-deps -e .
-python -m playwright install chromium
-uvicorn job_agents.api:app --host 127.0.0.1 --port 8000
-```
+- **Find live jobs** — Search a company's Greenhouse board by keyword and open the original posting.
+- **Manage your applicant profile** — Edit qualifications, skills, accomplishments, location, and work preferences.
+- **Check eligibility** — Inspect degree, graduation, experience, location, work authorization, sponsorship, and clearance checks.
+- **Resolve missing information** — Supply a missing fact, resume the workflow, and reuse that fact for the same applicant.
+- **Prepare grounded content** — Select relevant verified profile facts using Groq, Ollama, or the credential-free deterministic mode.
+- **Autofill an application** — Playwright fills a browser form, uploads a generated text resume, and captures screenshot evidence.
+- **Review before submission** — Inspect the content and field checks, then approve or reject. Approved applications are verified again before submission.
+- **Track outcomes** — View agent traces, application status, browser evidence, and submission receipts in a visitor-scoped history.
 
-Open http://127.0.0.1:8000. Select the first fictional job, start an application, inspect the checks and browser screenshot, then approve the sandbox submission to receive a receipt. Toggle the missing-info demo to test interruption, resumption, and reuse of the supplied fact. Rejected and ineligible applications do not submit.
+The hosted application connects to live Greenhouse listings and executes applications in ApplyPilot's built-in sandbox. It provides a complete discovery-to-receipt workflow without sending applications to employers.
 
-Use **Find jobs** to query one Greenhouse company board (default `arvaintelligence`). Edit the applicant profile, select a live posting, and run the same preparation workflow. The original posting remains linked. A board token is the company segment of its Greenhouse board URL. Live extraction is conservative and incomplete: unknown employer sponsorship blocks applicants who need sponsorship, and an extracted-constraint match is not a definitive eligibility determination.
+## Try the platform
 
-## Features implemented
+1. Open [ApplyPilot](https://job-application-agents.onrender.com) and review or edit the sample applicant.
+2. Select a sample job to exercise the complete workflow, or use **Find jobs** to search a live Greenhouse board. The default board is `arvaintelligence`.
+3. Choose **Start application**. Inspect the eligibility checks, grounded content, agent trace, and browser screenshot.
+4. Supply any missing applicant facts, then approve or reject the prepared sandbox application.
+5. Find the result and receipt under **Recent applications**.
 
-- LangGraph nodes for discovery, memory, eligibility, content, browser application, verification, review, submission, and tracking.
-- Degree, graduation window, experience, location, work authorization, sponsorship, and clearance checks on normalized fixtures.
-- Missing-fact interrupts with Pydantic validation and applicant-scoped reuse.
-- SQLite graph checkpoints and local restart/resume.
-- Grounded content with fact IDs; model mode selects existing facts rather than inventing applicant claims.
-- Real Chromium field filling, text resume upload, screenshots, and verification before a local submission.
-- Session-isolated histories and receipts; duplicate submission protection.
-- Simple editable profile and job feed interface, API, CLI, evaluation harness, and CI.
-
-## Free AI modes
-
-The default `CONTENT_MODE=deterministic` needs no credentials and makes no LLM call. For hosted model-based fact selection, configure `CONTENT_MODE=groq` and a `GROQ_API_KEY` secret from a Groq Free-plan account. `GROQ_MODEL` defaults to `openai/gpt-oss-20b`. For a local open model, set `CONTENT_MODE=ollama` and `OLLAMA_MODEL` to an installed model. Provider modes require separate verification with an available model/key; errors appear in the agent trace.
-
-Never commit a key. No paid plan is needed. See [deployment instructions](docs/DEPLOYMENT.md).
+A Greenhouse board token is the company segment in its job-board URL. Live requirement extraction is conservative: inspect the original posting for requirements that were not parsed. Unknown sponsorship policy blocks an applicant who needs sponsorship.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    D[Discovery: Greenhouse or fixture] --> M[Applicant memory]
-    M --> E[Eligibility]
-    E -->|Missing applicant facts| H[Pause for input]
+    D[Greenhouse discovery] --> M[Applicant memory]
+    M --> E[Eligibility screening]
+    E -->|Missing facts| H[Human input]
     H --> E
-    E -->|Known constraints match| C[Grounded content]
-    E -->|Failed or unknown employer policy| T[Track blocked outcome]
-    C --> A[Chromium sandbox filling]
+    E -->|Requirements match| C[Grounded content]
+    E -->|Blocked| T[Outcome tracking]
+    C --> A[Browser autofill and resume upload]
     A --> V[Content and field verification]
-    V -->|Pass| R[Pause for review]
+    V -->|Pass| R[Human review]
     V -->|Fail| T
-    R -->|Approve| S[Re-verify and submit locally]
+    R -->|Approve| S[Re-verify and submit to sandbox]
     R -->|Reject| T
     S --> T
 ```
 
-Specialized agent roles are implemented as typed workflow nodes. The deterministic baseline is a reproducible orchestration demo, not autonomous LLM reasoning. Browser interaction uses known accessible labels in a controlled form; arbitrary production ATS navigation and screenshot-based grounding are future work.
+| Layer | Technology | Role |
+| --- | --- | --- |
+| Agent orchestration | LangGraph | Typed specialist nodes, conditional routing, interrupts, and checkpoints |
+| Model integration | LangChain, Groq, Ollama | Structured selection of verified applicant facts |
+| API and validation | FastAPI, Pydantic | Application endpoints and validated job/profile data |
+| Browser execution | Playwright, Chromium | Form autofill, resume upload, screenshots, and field verification |
+| Persistence | SQLite | Applicant facts, workflow state, application history, and receipts |
+| Evaluation | pytest, scikit-learn, GitHub Actions | Workflow checks, eligibility metrics, and browser integration |
 
-## Checks and command-line demo
+## Guardrails and visibility
+
+Content references verified profile fact IDs; unsupported or repeated facts fail validation. A separate verification step checks both content and browser fields. Submission requires human approval and a fresh verification pass. Applicant memory and histories are scoped by visitor, and completed runs reject duplicate submission attempts.
+
+Each agent records its action and outcome in the application trace. Browser screenshots and receipts make the execution reviewable. Errors appear in the workflow instead of being reported as successful applications.
+
+## Run locally
+
+Requires Python 3.11+.
+
+```bash
+git clone https://github.com/tanish-malekar/applypilot.git
+cd applypilot
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.lock
+pip install --no-deps -e .
+python -m playwright install chromium
+python scripts/start-server.py
+```
+
+Open http://127.0.0.1:8000. Runtime screenshots, generated resumes, applicant facts, and checkpoints are stored in ignored `runtime/`.
+
+## AI configuration
+
+| Mode | Configuration | Behavior |
+| --- | --- | --- |
+| Credential-free | `CONTENT_MODE=deterministic` | Renders verified facts without an LLM call |
+| Groq | `CONTENT_MODE=groq`, `GROQ_API_KEY` | Uses a hosted model to select and order relevant fact IDs |
+| Ollama | `CONTENT_MODE=ollama`, `OLLAMA_MODEL` | Uses an installed local model for fact selection |
+
+Groq defaults to `GROQ_MODEL=openai/gpt-oss-20b`. Configure credentials as environment secrets; never commit them. The hosted platform uses Groq, and its model-backed discovery-to-receipt workflow has been verified. Local Ollama requires a separately installed model.
+
+## Validation
 
 ```bash
 ruff check .
@@ -67,14 +98,14 @@ pytest -q -m 'not browser'
 python scripts/evaluate.py
 # With the local server already running:
 RUN_BROWSER_TESTS=1 pytest tests/test_browser.py -q
-job-agents demo --approve-sandbox
-job-agents eligibility
+applypilot demo --approve-sandbox
+applypilot eligibility
 ```
 
-The checked-in evaluation uses 16 explicitly labeled synthetic scenarios; it is not a representative dataset of real postings. Runtime screenshots, resumes, memory, and checkpoints stay in ignored `runtime/`.
+The current suite includes 16 unit/API/workflow tests and a real Chromium integration test. The eligibility smoke set matches all 16 labeled synthetic scenarios; this small fixture set does not establish accuracy on real job postings. [Evaluation results](docs/day1-eligibility-results.json)
 
-[Stack research and employer sources](docs/STACK_RESEARCH.md)
+## Hosting and data
 
-## POC limits
+ApplyPilot runs on Render Free. Idle services may take about a minute to wake, and the free instance's local history and checkpoints reset on sleep, restart, or redeploy. Local installations retain SQLite state across process restarts. See the [deployment guide](docs/DEPLOYMENT.md) for configuration and storage behavior.
 
-No real employer submissions, CAPTCHA handling, Workday integration, authentication system, durable cloud database, or 200-posting labeled dataset is included. Render Free sleeps and resets local storage; see the deployment document. The supplied research brief guides the component roles, not operational actions or permission to submit job applications. Its named ownership, student identifiers, and old timeline are not imported into the project.
+Use fictional applicant information on the public site. Application execution currently supports the built-in sandbox; arbitrary employer ATS submission and production account management are outside the supported workflow.

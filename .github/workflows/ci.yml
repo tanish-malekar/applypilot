@@ -1,4 +1,4 @@
-name: POC checks
+name: ApplyPilot checks
 on: [push, pull_request]
 permissions:
   contents: read

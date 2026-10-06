@@ -2,7 +2,7 @@
 
 Reviewed October 6, 2026. This is a small, purposive sample of six employer-hosted applied AI and agent engineering postings, not a market-wide popularity ranking. Initial searches included framework names and therefore overrepresent them. One additional framework-neutral Applied AI search was used as a cross-check. Retired listings and candidate resumes were excluded. Names count once per posting, even if repeated; alternative/preferred tools also count. This supports choosing a relevant stack, not claiming statistical market share.
 
-| Employer / role | Explicit technologies relevant to this POC | Source |
+| Employer / role | Explicit technologies relevant to ApplyPilot | Source |
 |---|---|---|
 | Frontier / AI Engineer | LangGraph, LangChain, FastAPI, Pydantic, Playwright, scikit-learn; model training tools also listed | [Employer posting](https://www.myfrontier.ai/careers/vacancies/ai-engineer/) |
 | Focused / Senior Agent Engineer | LangChain, LangGraph, LangSmith, Python, FastAPI | [Employer posting](https://job-boards.greenhouse.io/focused/jobs/8002448003) |

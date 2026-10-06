@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 class Store:
-    """Local POC storage; applicant IDs scope memory and run IDs deduplicate submissions."""
+    """Local application storage; applicant IDs scope memory and run IDs deduplicate submissions."""
 
     def __init__(self, directory: Path):
         self.directory = directory

@@ -73,15 +73,7 @@ job-agents eligibility
 
 The checked-in evaluation uses 16 explicitly labeled synthetic scenarios; it is not a representative dataset of real postings. Runtime screenshots, resumes, memory, and checkpoints stay in ignored `runtime/`.
 
-## Three-day delivery
-
-- **October 6:** repository, executable workflow, one live source, simple UI, tests, deployment configuration.
-- **October 7 at 10 AM New York time:** better ingestion, memory retrieval, browser robustness, and evaluation cases.
-- **October 8 at 10 AM New York time:** integrated evaluation, failure analysis, live verification, and demo documentation.
-
-[Build plan](docs/BUILD_PLAN.md) · [Progress](docs/PROGRESS.md) · [Stack research and employer sources](docs/STACK_RESEARCH.md)
-
-Commit dates reflect actual work. A chat automation continues work on the next two days; local scheduled execution requires the computer/app to be available.
+[Stack research and employer sources](docs/STACK_RESEARCH.md)
 
 ## POC limits
 

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: job-application-agents
+    runtime: docker
+    plan: free
+    region: ohio
+    branch: main
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: CONTENT_MODE
+        value: deterministic
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b

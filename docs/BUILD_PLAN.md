@@ -1,0 +1,19 @@
+# Three-day implementation plan
+
+Dates are America/New_York. Make substantive commits on the day the work happens; never backdate, fabricate activity, or make empty commits. The user also requested a deployed, functional, free website and clarified that a basic POC with one job source is sufficient. Keep scope small.
+
+## Day 1 — October 6, 2026
+
+Create the GitHub repository first and share its URL. Build a working POC with a live Greenhouse public job feed, applicant editing, eligibility constraints, grounded application content, Chromium execution against a local ATS form, verification, approval/rejection, checkpoints, session-isolated tracking, and meaningful tests. Prepare Render Free deployment; deploy as soon as the user completes Render sign-in. Use Groq Free plan if a key is supplied, otherwise keep the no-key deterministic mode clearly labeled.
+
+## Day 2 — October 7, 2026, 10:00 AM
+
+Improve the existing **single Greenhouse source**, rather than adding more providers. Priorities: provenance and conservative requirement extraction; test sponsorship ambiguity and graduation/experience language; applicant memory retrieval beyond exact field reuse; browser handling for an alternate local form layout; a small labeled ingestion/memory evaluation set. Preserve the simple UI. Test, record evidence in PROGRESS.md, commit and push. If deployment remains pending and credentials are available, complete it and verify live functionality. Keep hosting/model choices free; do not upgrade plans. Maintain the deployed service through its GitHub integration.
+
+## Day 3 — October 8, 2026, 10:00 AM
+
+Evaluate the integrated POC on the local form variants and labeled synthetic job cases. Report completion rate, field correctness, interventions, failures, and grounding checks with dataset size and limitations. Add failure taxonomy, demonstration instructions, and final README polish. Fix observed failures, verify the live site when available, test, commit and push. Disable the two-day build automation when milestones are complete.
+
+## Operational constraints
+
+Read README.md and PROGRESS.md before changing anything. Preserve user edits. No real job submissions are authorized by the research brief. No secrets, provided PDF, student IDs, applicant personal data, screenshots containing private information, virtual environments, or runtime databases belong in Git. Never claim the synthetic cases are the proposed 200 manually labeled job postings. Hosted Free storage can reset and the service can sleep; document this plainly. Follow up on unavailable credentials rather than claiming deployment or provider integration is verified.

@@ -1,0 +1,141 @@
+{
+  "dataset": "synthetic POC scenarios",
+  "n": 16,
+  "cases": [
+    {
+      "id": "eligible_baseline",
+      "expected": "eligible",
+      "actual": "eligible"
+    },
+    {
+      "id": "experience_and_clearance_fail",
+      "expected": "ineligible",
+      "actual": "ineligible"
+    },
+    {
+      "id": "unknown_employer_sponsorship",
+      "expected": "needs_information",
+      "actual": "needs_information"
+    },
+    {
+      "id": "missing_authorization",
+      "expected": "needs_information",
+      "actual": "needs_information"
+    },
+    {
+      "id": "authorization_false",
+      "expected": "ineligible",
+      "actual": "ineligible"
+    },
+    {
+      "id": "no_sponsorship_needed",
+      "expected": "eligible",
+      "actual": "eligible"
+    },
+    {
+      "id": "graduation_before_window",
+      "expected": "ineligible",
+      "actual": "ineligible"
+    },
+    {
+      "id": "graduation_start_inclusive",
+      "expected": "eligible",
+      "actual": "eligible"
+    },
+    {
+      "id": "graduation_end_inclusive",
+      "expected": "eligible",
+      "actual": "eligible"
+    },
+    {
+      "id": "graduation_after_window",
+      "expected": "ineligible",
+      "actual": "ineligible"
+    },
+    {
+      "id": "missing_degree",
+      "expected": "needs_information",
+      "actual": "needs_information"
+    },
+    {
+      "id": "degree_insufficient",
+      "expected": "ineligible",
+      "actual": "ineligible"
+    },
+    {
+      "id": "location_fail",
+      "expected": "ineligible",
+      "actual": "ineligible"
+    },
+    {
+      "id": "zero_experience_boundary",
+      "expected": "eligible",
+      "actual": "eligible"
+    },
+    {
+      "id": "missing_sponsorship_need",
+      "expected": "needs_information",
+      "actual": "needs_information"
+    },
+    {
+      "id": "explicit_no_sponsorship",
+      "expected": "ineligible",
+      "actual": "ineligible"
+    }
+  ],
+  "classification": {
+    "eligible": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "ineligible": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 7.0
+    },
+    "needs_information": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 4.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 16.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 16.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      5,
+      0,
+      0
+    ],
+    [
+      0,
+      7,
+      0
+    ],
+    [
+      0,
+      0,
+      4
+    ]
+  ],
+  "label_order": [
+    "eligible",
+    "ineligible",
+    "needs_information"
+  ]
+}

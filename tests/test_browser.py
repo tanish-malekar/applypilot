@@ -38,6 +38,10 @@ def test_react_profile_missing_fact_approval_and_history():
         browser = playwright.chromium.launch()
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
+        with httpx.Client(base_url="http://127.0.0.1:8000") as source:
+            demo = source.get("/api/demo").json()
+        demo["jobs"][0]["questions"].append({"id": "start", "prompt": "When can you start?"})
+        page.route("**/api/demo", lambda route: route.fulfill(json=demo))
         page.goto("http://127.0.0.1:8000/demo")
         page.get_by_label("Search by title or company").fill("Secure")
         expect(
@@ -60,6 +64,10 @@ def test_react_profile_missing_fact_approval_and_history():
         expect(page.get_by_text("A little help from you", exact=True)).to_be_visible(timeout=90000)
         page.get_by_label("work authorized", exact=True).select_option("true")
         page.get_by_role("button", name="Save facts & continue", exact=True).click()
+        question = page.get_by_label("When can you start?", exact=True)
+        expect(question).to_be_visible(timeout=90000)
+        question.fill("June 2027")
+        page.get_by_role("button", name="Save answers & continue", exact=True).click()
         approve = page.get_by_role("button", name="Approve sandbox submission", exact=True)
         expect(approve).to_be_visible(timeout=90000)
         expect(page.locator(".document-text").first).to_contain_text("Taylor Sample")

@@ -52,6 +52,7 @@ def test_react_profile_missing_fact_approval_and_history():
         page.get_by_label("Email", exact=True).fill("taylor@example.com")
         page.get_by_text("Explore the workflow", exact=True).click()
         page.get_by_label("Try a missing work-authorization fact").check()
+        expect(page.get_by_role("combobox", name="Degree", exact=True)).to_have_value("masters")
         page.get_by_role("button", name="Save profile", exact=True).click()
         page.get_by_role(
             "button", name="Prepare application for Applied ML Engineer Intern", exact=True
@@ -61,7 +62,7 @@ def test_react_profile_missing_fact_approval_and_history():
         page.get_by_role("button", name="Save facts & continue", exact=True).click()
         approve = page.get_by_role("button", name="Approve sandbox submission", exact=True)
         expect(approve).to_be_visible(timeout=90000)
-        expect(page.locator(".document-text")).to_contain_text("Taylor Sample")
+        expect(page.locator(".document-text").first).to_contain_text("Taylor Sample")
         page.get_by_text("Browser evidence", exact=True).click()
         expect(
             page.get_by_alt_text("Application form filled and verified by the browser agent")
@@ -90,3 +91,32 @@ def test_react_profile_missing_fact_approval_and_history():
             page.get_by_role("button", name="Approve sandbox submission", exact=True)
         ).to_have_count(0)
         browser.close()
+
+
+@pytest.mark.browser
+def test_alternate_form_with_questions_and_human_answer():
+    if os.environ.get("RUN_BROWSER_TESTS") != "1":
+        pytest.skip("Start the local API on port 8000.")
+    with httpx.Client(base_url="http://127.0.0.1:8000", timeout=90) as client:
+        demo = client.get("/api/demo").json()
+        job = {
+            **demo["jobs"][0],
+            "form_layout": "alternate",
+            "questions": [
+                {"id": "skills", "prompt": "Relevant skills?", "fact_id": "skills"},
+                {"id": "start", "prompt": "When can you start?"},
+            ],
+        }
+        run = client.post("/api/runs", json={"applicant": demo["applicant"], "job": job}).json()
+        assert run["status"] == "needs_information", run
+        assert "browser" not in run
+        response = client.post(
+            f"/api/runs/{run['run_id']}/resume", json={"answers": {"start": "June 2027"}}
+        )
+        response.raise_for_status()
+        run = response.json()
+        assert run["status"] == "awaiting_review", run
+        assert "June 2027" in run["browser"]["fields"]["application_answers"]
+        assert run["content"]["cover_letter"]["text"] == run["browser"]["fields"]["cover_letter"]
+        submitted = client.post(f"/api/runs/{run['run_id']}/resume", json={"approved": True}).json()
+        assert submitted["status"] == "submitted", submitted

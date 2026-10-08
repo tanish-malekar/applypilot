@@ -211,13 +211,35 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
         ).values
         if not state:
             raise HTTPException(404, "Run not found")
-        return (
+        page = (
             (WEB / "sandbox.html")
             .read_text()
             .replace("__RUN_ID__", str(run_id))
             .replace("__COMPANY__", html.escape(state["job"]["company"]))
             .replace("__TITLE__", html.escape(state["job"]["title"]))
         )
+
+        if state["job"].get("form_layout") == "alternate":
+            # Same accessible labels, different IDs and a two-column layout.
+            for key in [
+                "name",
+                "email",
+                "location",
+                "work_authorized",
+                "needs_sponsorship",
+                "cover_letter",
+                "application_answers",
+                "resume",
+            ]:
+                page = page.replace(f'for="{key}"', f'for="alternate-{key}"').replace(
+                    f'id="{key}"', f'id="alternate-{key}"'
+                )
+            page = page.replace(
+                '<form id="application">',
+                '<form id="application" style="display:grid;'
+                'grid-template-columns:1fr 2fr;gap:10px">',
+            )
+        return page
 
     @app.post("/sandbox/{run_id}/submit")
     async def submit(run_id: UUID, request: Request):

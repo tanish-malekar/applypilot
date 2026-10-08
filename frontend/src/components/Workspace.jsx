@@ -147,6 +147,39 @@ function MissingFacts({ pending, onResume, busy }) {
   );
 }
 
+function MissingQuestions({ pending, onResume, busy }) {
+  return (
+    <div className="input-request">
+      <div className="section-label">A verified answer from you</div>
+      <p>
+        These questions cannot be answered from your profile. Your exact answers
+        will be remembered for matching questions.
+      </p>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          const data = new FormData(event.currentTarget);
+          onResume({
+            answers: Object.fromEntries(
+              pending.questions.map((q) => [q.id, data.get(q.id)]),
+            ),
+          });
+        }}
+      >
+        {pending.questions.map((q) => (
+          <label key={q.id}>
+            {q.prompt}
+            <textarea name={q.id} required maxLength={4000} />
+          </label>
+        ))}
+        <button className="primary" disabled={busy}>
+          Save answers & continue
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function Workspace({ run, busy, onResume, selectedJob }) {
   const pending = run?.pending?.[0];
   return (
@@ -267,23 +300,70 @@ export default function Workspace({ run, busy, onResume, selectedJob }) {
               ))}
             </div>
           )}
+          {pending?.kind === "question_information" && (
+            <MissingQuestions
+              pending={pending}
+              onResume={onResume}
+              busy={busy}
+            />
+          )}
           {run.content && (
             <div className="document">
-              <div className="document-header">
-                <FileText size={16} />
-                <b>Application statement</b>
-                <span>{run.content.fact_ids.length} cited facts</span>
-              </div>
-              <div className="document-text">{run.content.text}</div>
+              {[
+                ["Resume", run.content.resume?.text || run.content.text],
+                [
+                  "Cover letter",
+                  run.content.cover_letter?.text || run.content.text,
+                ],
+              ].map(([title, text]) => (
+                <details key={title} open={title === "Resume"}>
+                  <summary className="document-header">
+                    <FileText size={16} />
+                    <b>{title}</b>
+                  </summary>
+                  <div className="document-text">{text}</div>
+                  <a
+                    className="secondary"
+                    download={
+                      title === "Resume" ? "resume.txt" : "cover-letter.txt"
+                    }
+                    href={`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`}
+                  >
+                    Download {title.toLowerCase()}
+                  </a>
+                </details>
+              ))}
+              <details open>
+                <summary className="document-header">
+                  <b>Application questions</b>
+                </summary>
+                {run.content.answers?.length ? (
+                  run.content.answers.map((answer) => (
+                    <div className="document-text" key={answer.id}>
+                      <b>{answer.prompt}</b>
+                      <p>{answer.answer || "Your answer is required."}</p>
+                      <small>
+                        {answer.provenance === "human"
+                          ? "Human-provided answer"
+                          : answer.fact_ids.join(", ") || "Unresolved"}
+                      </small>
+                    </div>
+                  ))
+                ) : (
+                  <p>No additional questions supplied for this role.</p>
+                )}
+              </details>
               <details className="evidence">
                 <summary>View grounding evidence</summary>
                 <p>
-                  Content mode: {run.content.mode}. Each line comes from a
-                  verified profile fact.
+                  Content mode: {run.content.mode}. Applicant claims use
+                  verified profile facts.
                 </p>
                 <ul>
                   {run.content.fact_ids.map((id) => (
-                    <li key={id}>{run.content.facts[id]}</li>
+                    <li key={id}>
+                      <b>{id}</b>: {run.content.facts[id]}
+                    </li>
                   ))}
                 </ul>
               </details>
@@ -329,7 +409,7 @@ export default function Workspace({ run, busy, onResume, selectedJob }) {
               </div>
             </div>
           )}
-          {pending && pending.kind !== "review" && (
+          {pending?.kind === "missing_information" && (
             <MissingFacts pending={pending} onResume={onResume} busy={busy} />
           )}
           {run.receipt && (

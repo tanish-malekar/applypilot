@@ -1,7 +1,16 @@
+import hashlib
 import json
 import os
+import re
 
-from job_agents.models import Applicant, ContentSelection, Job, PreparedContent
+from job_agents.models import (
+    Applicant,
+    ContentSelection,
+    GroundedDocument,
+    Job,
+    PreparedContent,
+    QuestionAnswer,
+)
 
 
 def fact_bank(applicant: Applicant) -> dict[str, str]:
@@ -15,6 +24,10 @@ def fact_bank(applicant: Applicant) -> dict[str, str]:
         facts["experience"] = f"I have {applicant.experience_years:g} {unit} of experience."
     if applicant.skills:
         facts["skills"] = f"My skills include {', '.join(applicant.skills)}."
+    for field in ["location", "work_authorized", "needs_sponsorship", "has_clearance"]:
+        value = getattr(applicant, field)
+        if value is not None:
+            facts[field] = f"{field.replace('_', ' ').capitalize()}: {value}."
     for i, accomplishment in enumerate(applicant.accomplishments):
         facts[f"accomplishment_{i}"] = accomplishment
     return facts
@@ -26,7 +39,18 @@ def render(facts: dict[str, str], ids: list[str]) -> str:
 
 def generate(applicant: Applicant, job: Job, mode: str = "deterministic") -> PreparedContent:
     facts = fact_bank(applicant)
-    ids = list(facts)
+    selection_facts = {
+        k: v
+        for k, v in facts.items()
+        if k not in {"work_authorized", "needs_sponsorship", "has_clearance"}
+    }
+    # Rank only verified facts; job text can influence relevance, never create claims.
+    terms = set(re.findall(r"[a-z0-9]+", " ".join(job.skills).casefold()))
+    ranked = sorted(
+        selection_facts,
+        key=lambda key: -len(terms & set(re.findall(r"[a-z0-9]+", facts[key].casefold()))),
+    )
+    ids = ["identity"] + [key for key in ranked if key != "identity"][:11]
     if mode in {"ollama", "groq"}:
         from langchain_core.messages import HumanMessage, SystemMessage
         from langchain_ollama import ChatOllama
@@ -62,7 +86,7 @@ def generate(applicant: Applicant, job: Job, mode: str = "deterministic") -> Pre
                     content=json.dumps(
                         {
                             "job": {"title": job.title, "description": job.description[:8000]},
-                            "facts": facts,
+                            "facts": selection_facts,
                         }
                     )
                 ),
@@ -71,9 +95,18 @@ def generate(applicant: Applicant, job: Job, mode: str = "deterministic") -> Pre
         ids = selected.fact_ids
     elif mode != "deterministic":
         raise ValueError(f"Unknown content mode: {mode}")
-    if not ids or len(ids) != len(set(ids)) or any(key not in facts for key in ids):
+    if not ids or len(ids) != len(set(ids)) or any(key not in selection_facts for key in ids):
         raise ValueError("Content selection contained invalid or repeated fact IDs.")
-    return PreparedContent(text=render(facts, ids), fact_ids=ids, facts=facts, mode=mode)
+    resume, letter, answers = documents(applicant, job, facts, ids)
+    return PreparedContent(
+        text=render(facts, ids),
+        fact_ids=ids,
+        facts=facts,
+        mode=mode,
+        resume=resume,
+        cover_letter=letter,
+        answers=answers,
+    )
 
 
 def verify_content(applicant: Applicant, content: PreparedContent) -> list[str]:
@@ -88,3 +121,60 @@ def verify_content(applicant: Applicant, content: PreparedContent) -> list[str]:
     if not content.fact_ids or len(content.fact_ids) != len(set(content.fact_ids)):
         errors.append("Content must cite distinct verified facts.")
     return errors
+
+
+def documents(applicant, job, facts, ids):
+    # Fixed prose wraps verified facts. The model never writes applicant claims.
+    resume = GroundedDocument(
+        text=f"{applicant.name}\n{applicant.email}\n\n" + render(facts, ids), fact_ids=ids
+    )
+    letter = GroundedDocument(
+        text="Dear hiring team,\n\nPlease consider my application.\n\n"
+        + render(facts, ids)
+        + f"\n\nThank you for your consideration.\n{applicant.name}",
+        fact_ids=ids,
+    )
+    answers = []
+    for question in job.questions:
+        if question.fact_id in facts:
+            answers.append(
+                QuestionAnswer(
+                    id=question.id,
+                    prompt=question.prompt,
+                    answer=facts[question.fact_id],
+                    fact_ids=[question.fact_id],
+                    provenance="profile",
+                )
+            )
+        else:
+            answer = applicant.application_answers.get(
+                question_key(job, question.prompt),
+                applicant.application_answers.get(question.prompt),
+            )
+            answers.append(
+                QuestionAnswer(
+                    id=question.id,
+                    prompt=question.prompt,
+                    answer=answer,
+                    provenance="human" if answer else "unresolved",
+                )
+            )
+    return resume, letter, answers
+
+
+def verify_bundle(applicant, job, content):
+    errors = verify_content(applicant, content)
+    if errors:
+        return errors
+    expected = documents(applicant, job, fact_bank(applicant), content.fact_ids)
+    observed = (content.resume, content.cover_letter, content.answers)
+    if observed != expected:
+        errors.append("Generated documents or answers differ from their verified evidence.")
+    if any(answer.answer is None for answer in content.answers):
+        errors.append("Application questions require human answers.")
+    return errors
+
+
+def question_key(job, prompt):
+    normalized = " ".join(prompt.casefold().split())
+    return hashlib.sha256(f"{job.company}\0{normalized}".encode()).hexdigest()

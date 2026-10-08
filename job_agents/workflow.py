@@ -10,9 +10,10 @@ from uuid import uuid4
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
+from langsmith import tracing_context
 
 from job_agents.browser import SandboxBrowser, expected_fields
-from job_agents.content import generate, verify_content
+from job_agents.content import generate, question_key, verify_bundle, verify_content
 from job_agents.eligibility import evaluate
 from job_agents.models import (
     Applicant,
@@ -20,9 +21,11 @@ from job_agents.models import (
     Job,
     PreparedContent,
     ProfileAnswers,
+    QuestionResponses,
     ReviewDecision,
     RunRequest,
 )
+from job_agents.observability import Observer
 from job_agents.storage import Store
 
 
@@ -54,6 +57,7 @@ class Workflow:
     ):
         database_url = os.environ.get("DATABASE_URL")
         self.store = Store(directory, database_url)
+        self.observer = Observer.from_environment(self.store)
         self.browser = browser or SandboxBrowser(base_url, directory)
         self.content_mode = content_mode
         self.postgres_context = None
@@ -87,21 +91,32 @@ class Workflow:
             "eligibility",
             "missing_information",
             "content",
+            "question_information",
             "application",
             "verification",
             "review",
             "auto_apply",
             "finish",
         ]:
-            graph.add_node(name, getattr(self, name))
+            graph.add_node(name, self.observer.wrap(name, getattr(self, name)))
         graph.add_edge(START, "discovery")
         graph.add_edge("discovery", "memory")
         graph.add_edge("memory", "eligibility")
         graph.add_conditional_edges("eligibility", self.route_eligibility)
         graph.add_edge("missing_information", "eligibility")
         graph.add_conditional_edges(
-            "content", lambda s: "finish" if s["status"] == "failed" else "application"
+            "content",
+            lambda s: (
+                "finish"
+                if s["status"] == "failed"
+                else (
+                    "question_information"
+                    if any(a["answer"] is None for a in s["content"].get("answers", []))
+                    else "application"
+                )
+            ),
         )
+        graph.add_edge("question_information", "content")
         graph.add_conditional_edges(
             "application", lambda s: "finish" if s["status"] == "failed" else "verification"
         )
@@ -131,6 +146,8 @@ class Workflow:
             if field in ProfileAnswers.model_fields and profile.get(field) is None:
                 profile[field] = value
                 reused.append(field)
+        saved_answers = cached.get("application_answers", {})
+        profile["application_answers"] = {**saved_answers, **profile.get("application_answers", {})}
         applicant = Applicant.model_validate(profile)
         return {
             "applicant": applicant.model_dump(mode="json"),
@@ -197,6 +214,35 @@ class Workflow:
         except Exception as exc:
             return {"status": "failed", "trace": event("content", f"{type(exc).__name__}: {exc}")}
 
+    def question_information(self, state):
+        questions = [a for a in state["content"]["answers"] if a["answer"] is None]
+        response = interrupt(
+            {
+                "kind": "question_information",
+                "questions": questions,
+                "message": "Provide verified answers; agents will not guess.",
+            }
+        )
+        parsed = QuestionResponses.model_validate(response).answers
+        if set(parsed) != {q["id"] for q in questions} or any(
+            not value.strip() or len(value) > 4000 for value in parsed.values()
+        ):
+            raise ValueError(
+                "Provide one non-empty answer per requested question (maximum 4000 characters)."
+            )
+        applicant = Applicant.model_validate(state["applicant"])
+        applicant.application_answers.update(
+            {
+                question_key(Job.model_validate(state["job"]), q["prompt"]): parsed[q["id"]].strip()
+                for q in questions
+            }
+        )
+        self.store.remember(applicant.id, {"application_answers": applicant.application_answers})
+        return {
+            "applicant": applicant.model_dump(mode="json"),
+            "trace": event("memory", "Stored human-provided application answers."),
+        }
+
     def application(self, state):
         try:
             result = self.browser.prepare(
@@ -214,7 +260,11 @@ class Workflow:
     def verification(self, state):
         applicant = Applicant.model_validate(state["applicant"])
         content = PreparedContent.model_validate(state["content"])
-        errors = verify_content(applicant, content)
+        errors = (
+            verify_bundle(applicant, Job.model_validate(state["job"]), content)
+            if content.resume
+            else verify_content(applicant, content)
+        )
         expected = expected_fields(applicant, content)
         observed = state["browser"].get("fields", {})
         errors += [
@@ -289,7 +339,7 @@ class Workflow:
         if pending:
             result["status"] = (
                 "needs_information"
-                if pending[0]["kind"] == "missing_information"
+                if pending[0]["kind"] in {"missing_information", "question_information"}
                 else "awaiting_review"
             )
         screenshot = result.get("browser", {}).get("screenshot")
@@ -300,7 +350,7 @@ class Workflow:
 
     def start(self, request: RunRequest):
         run_id = str(uuid4())
-        with self.lock:
+        with self.lock, tracing_context(enabled=False):
             self.graph.invoke(
                 {
                     "run_id": run_id,
@@ -313,13 +363,19 @@ class Workflow:
             return self.snapshot(run_id)
 
     def resume(self, run_id: str, answer: dict):
-        with self.lock:
+        with self.lock, tracing_context(enabled=False):
             current = self.snapshot(run_id)
             if not current["pending"]:
                 raise ValueError("Run is not waiting for input.")
             pending = current["pending"][0]
             if pending["kind"] == "review":
                 ReviewDecision.model_validate(answer)
+            elif pending["kind"] == "question_information":
+                values = QuestionResponses.model_validate(answer).answers
+                if set(values) != {q["id"] for q in pending["questions"]} or any(
+                    not v.strip() or len(v) > 4000 for v in values.values()
+                ):
+                    raise ValueError("Provide exactly the requested question answers.")
             else:
                 parsed = ProfileAnswers.model_validate(answer).model_dump(exclude_none=True)
                 if set(parsed) != set(pending["fields"]):

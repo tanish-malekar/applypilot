@@ -17,10 +17,10 @@ ApplyPilot is a stateful job-application platform that connects live job discove
 - **Manage your applicant profile** — Edit qualifications, skills, accomplishments, location, and work preferences.
 - **Check eligibility** — Inspect degree, graduation, experience, location, work authorization, sponsorship, and clearance checks.
 - **Resolve missing information** — Supply a missing fact, resume the workflow, and reuse that fact for the same applicant.
-- **Prepare grounded content** — Select relevant verified profile facts using Groq, Ollama, or the credential-free deterministic mode.
+- **Prepare grounded content** — Generate separate downloadable text resumes, cover letters, and explicit application-question answers from verified facts. Groq or Ollama selects facts; fixed prose preserves grounding. Unsupported answers pause for your input.
 - **Autofill an application** — Playwright fills a browser form, uploads a generated text resume, and captures screenshot evidence.
 - **Review before submission** — Inspect the content and field checks, then approve or reject. Approved applications are verified again before submission.
-- **Track outcomes** — View agent traces, application status, browser evidence, and submission receipts in a visitor-scoped history.
+- **Track outcomes** — View agent traces, application status, browser evidence, and submission receipts in your account-scoped history (visitor-scoped in the sample workspace).
 
 The hosted application connects to live Greenhouse listings and executes applications in ApplyPilot's built-in sandbox. It provides a complete discovery-to-receipt workflow without sending applications to employers.
 
@@ -62,13 +62,14 @@ flowchart TD
 | Browser execution | Playwright, Chromium | Form autofill, resume upload, screenshots, and field verification |
 | Accounts | Supabase Auth | Managed email/password and Google OAuth sessions, verified by the API |
 | Persistence | PostgreSQL, SQLite | Private account profiles, memory, LangGraph checkpoints, history, receipts, and screenshot evidence |
-| Evaluation | pytest, scikit-learn, GitHub Actions | Workflow checks, eligibility metrics, and browser integration |
+| Evaluation | pytest, scikit-learn, GitHub Actions | Labeled synthetic cases, grounding checks, and real browser/PostgreSQL integration |
+| Observability | LangSmith (optional) | Metadata-only node timings/outcomes with a durable hard usage cap |
 
 ## Guardrails and visibility
 
 Content references verified profile fact IDs; unsupported or repeated facts fail validation. A separate verification step checks both content and browser fields. Submission requires human approval and a fresh verification pass. Account-enabled requests are verified with Supabase before the API uses the account ID for ownership. Applicant memory, profiles, runs, and screenshots are account-scoped; completed runs reject duplicate submission attempts. The sample workspace uses a visitor cookie when account configuration is absent.
 
-Each agent records its action and outcome in the application trace. Browser screenshots and receipts make the execution reviewable. Errors appear in the workflow instead of being reported as successful applications.
+Each agent records its action and outcome in the application trace. Optional [LangSmith tracing](docs/OBSERVABILITY.md) exports only safe metadata and timings; live activation requires maintainer setup. Browser screenshots and receipts make the execution reviewable. Errors appear in the workflow instead of being reported as successful applications.
 
 ## Run locally
 
@@ -110,11 +111,12 @@ pytest -q -m 'not browser'
 python scripts/evaluate.py
 # With the local server already running:
 RUN_BROWSER_TESTS=1 pytest -q -m browser
+python scripts/evaluate_integrated.py
 applypilot demo --approve-sandbox
 applypilot eligibility
 ```
 
-The suite covers workflow and API behavior, account isolation and token rejection, four Chromium browser tests, and a PostgreSQL restart/resume test. Browser auth tests use an isolated provider fixture; real Google and email delivery require live provider verification. Set `PG_TEST_DATABASE_URL` to an isolated PostgreSQL database to run the persistence test. GitHub Actions provisions this database automatically. The eligibility smoke set matches all 16 labeled synthetic scenarios; this small fixture set does not establish accuracy on real job postings. [Evaluation results](docs/day1-eligibility-results.json)
+The suite covers workflow and API behavior, account isolation and token rejection, five Chromium browser tests, and a PostgreSQL restart/resume test. Browser auth tests use an isolated provider fixture; real Google and email delivery require live provider verification. Set `PG_TEST_DATABASE_URL` to an isolated PostgreSQL database to run the persistence test. GitHub Actions provisions this database automatically. The eligibility smoke set matches all 16 labeled synthetic scenarios; this small fixture set does not establish accuracy on real job postings. [Eligibility results](docs/day1-eligibility-results.json) · [Integrated evaluation and limitations](docs/EVALUATION.md)
 
 ## Hosting and data
 

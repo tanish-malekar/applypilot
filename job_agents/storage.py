@@ -69,10 +69,22 @@ class Store:
         conn.execute(
             "CREATE TABLE IF NOT EXISTS profiles (owner TEXT PRIMARY KEY, profile TEXT NOT NULL)"
         )
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS trace_quota (id TEXT PRIMARY KEY, used INTEGER NOT NULL)"
+        )
         binary = "BYTEA" if self.database_url else "BLOB"
         conn.execute(
             f"CREATE TABLE IF NOT EXISTS artifacts (run_id TEXT PRIMARY KEY, png {binary} NOT NULL)"
         )
+
+    def reserve_trace(self, limit):
+        with self.connect() as conn:
+            conn.execute("INSERT INTO trace_quota VALUES ('global', 0) ON CONFLICT(id) DO NOTHING")
+            row = conn.execute(
+                "UPDATE trace_quota SET used=used+1 WHERE id='global' AND used < ? RETURNING used",
+                (limit,),
+            ).fetchone()
+        return row is not None
 
     def get_profile(self, owner):
         with self.connect() as conn:

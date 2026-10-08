@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { X, Check, ShieldCheck } from "lucide-react";
 import { profileFields } from "../lib/ui.js";
 
@@ -15,7 +15,7 @@ export default function ProfileDialog({
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open && applicant) {
       setDraft(
         Object.fromEntries(

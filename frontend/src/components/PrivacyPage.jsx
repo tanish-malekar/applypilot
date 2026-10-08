@@ -43,8 +43,8 @@ export default function PrivacyPage({ navigate }) {
           <h2>Application preparation</h2>
           <p>
             The hosted AI workflow sends your name, education, experience,
-            skills, accomplishments, and relevant job description to Groq to
-            select supporting facts for application content. Email and
+            skills, accomplishments, location, and relevant job description to
+            Groq to select supporting facts for application content. Email and
             work-authorization fields are used by the application form and
             eligibility checks. Avoid adding information that you do not want
             processed for this purpose.
@@ -54,6 +54,15 @@ export default function PrivacyPage({ navigate }) {
             enabled, Supabase PostgreSQL stores your profile and workflows,
             including browser evidence. Authentication sessions are kept in your
             browser by the Supabase client so you can return to your account.
+          </p>
+        </section>
+        <section>
+          <h2>Optional workflow monitoring</h2>
+          <p>
+            When the maintainer enables LangSmith, it receives node names,
+            status categories, and timings. Application text, identity,
+            screenshots, credentials, and model prompts or responses are
+            excluded from these traces. Monitoring has a fixed total usage cap.
           </p>
         </section>
         <section>

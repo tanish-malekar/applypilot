@@ -38,21 +38,59 @@ def normalize(board: str, raw: dict) -> Job:
     )
     yes_sponsor = bool(
         re.search(
-            r"(?:we (?:do |will )?sponsor|(?:visa )?sponsorship (?:is )?available)",
+            r"(?:we (?:do |will )?sponsor|"
+            r"(?<!no )(?<!not )(?:visa )?sponsorship (?:is )?available)",
             description,
             re.I,
         )
     )
-    # Conflicting evidence cannot resolve a policy.
+    conditional = bool(
+        re.search(
+            r"sponsor.{0,60}(?:case.by.case|may|might)|(?:may|might).{0,40}sponsor",
+            description,
+            re.I,
+        )
+    )
+    if yes_sponsor:
+        positive_clauses = re.split(r"[.;\n]", description)
+        yes_sponsor = any(
+            re.search(r"we (?:do |will )?sponsor|sponsorship (?:is )?available", clause, re.I)
+            and not re.search(r"\b(?:no|not|cannot|unable|without)\b", clause, re.I)
+            for clause in positive_clauses
+        )
+    conditional = conditional or bool(
+        re.search(r"sponsor.{0,60}(?:only|subject to|depending)", description, re.I)
+    )
+    # Conflicting or conditional evidence cannot resolve a policy.
     sponsorship = (
-        False
+        None
+        if conditional
+        else False
         if no_sponsor and not yes_sponsor
         else (True if yes_sponsor and not no_sponsor else None)
     )
-    experience = re.search(
-        r"(\d+)\+? years (?:of )?(?:professional |relevant )?experience", description, re.I
-    )
-    degree = "bachelors" if re.search(r"bachelor'?s degree", description, re.I) else None
+    clauses = re.split(r"[.;\n]", description)
+    evidence = {}
+    degree = None
+    years = []
+    for clause in clauses:
+        if re.search(r"preferred|nice to have|equivalent|or experience|up to", clause, re.I):
+            continue
+        requirement = re.search(r"required|must|minimum|at least|require", clause, re.I)
+        if not requirement:
+            continue
+        if re.search(r"bachelor['’]?s degree", clause, re.I):
+            degree = "bachelors"
+            evidence.setdefault("min_degree", []).append(clause.strip())
+        match = re.search(
+            r"(\d+)\+? years? (?:of )?(?:professional |relevant )?experience", clause, re.I
+        )
+        if match:
+            years.append(float(match.group(1)))
+            evidence.setdefault("min_experience_years", []).append(clause.strip())
+    policy_clauses = [c.strip() for c in clauses if re.search(r"sponsor", c, re.I)]
+    if policy_clauses:
+        evidence["offers_sponsorship"] = policy_clauses
     skills = [
         skill
         for skill in [
@@ -79,12 +117,13 @@ def normalize(board: str, raw: dict) -> Job:
         description=description,
         skills=skills,
         min_degree=degree,
-        min_experience_years=float(experience.group(1)) if experience else None,
+        min_experience_years=max(years) if years else None,
         offers_sponsorship=sponsorship,
         requires_work_authorization=False,
         source="greenhouse",
         source_url=source_url,
         source_location=raw.get("location", {}).get("name", "Unspecified"),
+        requirement_evidence=evidence,
         extraction_notes=[
             "Conservative regex extraction; review the original posting.",
             "Location, graduation, clearance, and authorization requirements are not inferred.",

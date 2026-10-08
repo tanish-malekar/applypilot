@@ -12,6 +12,7 @@ LABELS = {
     "work_authorized": "Authorized to work",
     "needs_sponsorship": "Need sponsorship",
     "cover_letter": "Application statement",
+    "application_answers": "Application questions",
 }
 
 
@@ -30,7 +31,8 @@ def expected_fields(applicant: Applicant, content: PreparedContent) -> dict[str,
         else "yes"
         if applicant.needs_sponsorship
         else "no",
-        "cover_letter": content.text,
+        "cover_letter": content.cover_letter.text if content.cover_letter else content.text,
+        "application_answers": "\n\n".join(f"{a.prompt}\n{a.answer}" for a in content.answers),
     }
 
 
@@ -61,7 +63,9 @@ class SandboxBrowser:
         output.mkdir(parents=True, exist_ok=True)
         resume = output / "resume.txt"
         resume.write_text(
-            f"{applicant.name}\n{applicant.email}\n\n" + "\n".join(content.facts.values()),
+            content.resume.text
+            if content.resume
+            else (f"{applicant.name}\n{applicant.email}\n\n" + "\n".join(content.facts.values())),
             encoding="utf-8",
         )
         with sync_playwright() as p:
@@ -100,6 +104,11 @@ class SandboxBrowser:
                     "el => Array.from(el.files).map(f => f.name)"
                 )
                 errors = [f"Field mismatch: {k}" for k in fields if fields[k] != actual[k]]
+                uploaded_text = page.get_by_label("Resume document", exact=True).evaluate(
+                    "async el => await el.files[0].text()"
+                )
+                if uploaded_text != resume.read_text(encoding="utf-8"):
+                    errors.append("Resume contents differ from the generated document.")
                 if upload != [resume.name]:
                     errors.append("Resume upload mismatch.")
                 screenshot = output / ("submitted.png" if submit else "prepared.png")

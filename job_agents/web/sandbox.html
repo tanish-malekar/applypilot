@@ -10,13 +10,14 @@ body{font:16px system-ui;background:#f1f5f9;color:#182334;margin:0}main{max-widt
 <label for="work_authorized">Authorized to work</label><select id="work_authorized" name="work_authorized"><option value="">Choose</option><option value="yes">Yes</option><option value="no">No</option></select>
 <label for="needs_sponsorship">Need sponsorship</label><select id="needs_sponsorship" name="needs_sponsorship"><option value="">Choose</option><option value="yes">Yes</option><option value="no">No</option></select>
 <label for="cover_letter">Application statement</label><textarea id="cover_letter" name="cover_letter" required></textarea>
+<label for="application_answers">Application questions</label><textarea id="application_answers" name="application_answers"></textarea>
 <label for="resume">Resume document</label><input id="resume" name="resume" type="file" accept=".txt" required>
 <button type="submit">Submit sandbox application</button>
 </form><div id="receipt" data-testid="receipt" hidden></div><div id="error" role="alert"></div>
 </main><script>
 document.querySelector('form').addEventListener('submit', async event => {
  event.preventDefault(); const form = event.target;
- const fields = Object.fromEntries(['name','email','location','work_authorized','needs_sponsorship','cover_letter'].map(key => [key, form.elements[key].value]));
+ const fields = Object.fromEntries(['name','email','location','work_authorized','needs_sponsorship','cover_letter','application_answers'].map(key => [key, form.elements[key].value]));
  try {const response=await fetch('/sandbox/__RUN_ID__/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields,resume_name:form.elements.resume.files[0].name})});
  const data=await response.json();if(!response.ok)throw new Error(data.detail);
  const receipt=document.querySelector('#receipt');receipt.textContent=data.receipt_id;receipt.hidden=false;form.querySelector('button').disabled=true;

@@ -49,3 +49,4 @@ jobs:
             sleep 1
           done
           RUN_BROWSER_TESTS=1 pytest -q -m browser
+          python scripts/evaluate_integrated.py

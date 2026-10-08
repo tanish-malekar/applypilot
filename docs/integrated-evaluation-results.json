@@ -1,0 +1,92 @@
+{
+  "dataset": "8 labeled synthetic sandbox workflows; no employer applications",
+  "model_mode": "server-configured; results are not model quality benchmarks",
+  "cases": [
+    {
+      "case": "standard-approved",
+      "expected": "submitted",
+      "actual": "submitted",
+      "passed": true,
+      "field_matches": 7,
+      "field_count": 7,
+      "grounding_errors": [],
+      "human_interventions": 1
+    },
+    {
+      "case": "alternate-approved",
+      "expected": "submitted",
+      "actual": "submitted",
+      "passed": true,
+      "field_matches": 7,
+      "field_count": 7,
+      "grounding_errors": [],
+      "human_interventions": 1
+    },
+    {
+      "case": "missing-authorization",
+      "expected": "submitted",
+      "actual": "submitted",
+      "passed": true,
+      "field_matches": 7,
+      "field_count": 7,
+      "grounding_errors": [],
+      "human_interventions": 2
+    },
+    {
+      "case": "human-question",
+      "expected": "submitted",
+      "actual": "submitted",
+      "passed": true,
+      "field_matches": 7,
+      "field_count": 7,
+      "grounding_errors": [],
+      "human_interventions": 2
+    },
+    {
+      "case": "human-rejected",
+      "expected": "rejected",
+      "actual": "rejected",
+      "passed": true,
+      "field_matches": 7,
+      "field_count": 7,
+      "grounding_errors": [],
+      "human_interventions": 1
+    },
+    {
+      "case": "ineligible",
+      "expected": "ineligible",
+      "actual": "ineligible",
+      "passed": true,
+      "field_matches": 0,
+      "field_count": 0,
+      "grounding_errors": [],
+      "human_interventions": 0
+    },
+    {
+      "case": "unknown-policy",
+      "expected": "blocked",
+      "actual": "blocked",
+      "passed": true,
+      "field_matches": 0,
+      "field_count": 0,
+      "grounding_errors": [],
+      "human_interventions": 0
+    },
+    {
+      "case": "invalid-answer",
+      "expected": "needs_information",
+      "actual": "needs_information",
+      "passed": true,
+      "field_matches": 0,
+      "field_count": 0,
+      "grounding_errors": [],
+      "human_interventions": 0
+    }
+  ],
+  "passed": 8,
+  "total": 8,
+  "submitted": 4,
+  "field_matches": 35,
+  "field_count": 35,
+  "human_interventions": 7
+}

@@ -19,7 +19,7 @@ export default function ApplicationHistory({ runs, onOpen, busy, filtered }) {
           <tr>
             <th>Position</th>
             <th>Resume</th>
-            <th>Statement</th>
+            <th>Cover letter</th>
             <th>Status</th>
             <th>Updated</th>
             <th>

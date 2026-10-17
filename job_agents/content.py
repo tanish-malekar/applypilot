@@ -51,7 +51,12 @@ def generate(applicant: Applicant, job: Job, mode: str = "deterministic") -> Pre
         key=lambda key: -len(terms & set(re.findall(r"[a-z0-9]+", facts[key].casefold()))),
     )
     ids = ["identity"] + [key for key in ranked if key != "identity"][:11]
-    if mode in {"ollama", "groq"}:
+    rewrites = []
+    if mode == "sft":
+        from job_agents.tailor import configured_tailor
+        rewrites = configured_tailor().rewrite({"title": job.title, "description": job.description[:8000]}, selection_facts)
+        ids = [bullet.fact_id for bullet in rewrites]
+    elif mode in {"ollama", "groq"}:
         from langchain_core.messages import HumanMessage, SystemMessage
         from langchain_ollama import ChatOllama
 
@@ -98,7 +103,11 @@ def generate(applicant: Applicant, job: Job, mode: str = "deterministic") -> Pre
     if not ids or len(ids) != len(set(ids)) or any(key not in selection_facts for key in ids):
         raise ValueError("Content selection contained invalid or repeated fact IDs.")
     resume, letter, answers = documents(applicant, job, facts, ids)
+    if rewrites:
+        from job_agents.tailor import rewrite_text
+        resume = GroundedDocument(text=rewrite_text(applicant, rewrites), fact_ids=ids)
     return PreparedContent(
+        rewrites=rewrites,
         text=render(facts, ids),
         fact_ids=ids,
         facts=facts,
@@ -167,6 +176,19 @@ def verify_bundle(applicant, job, content):
     if errors:
         return errors
     expected = documents(applicant, job, fact_bank(applicant), content.fact_ids)
+    if content.mode == "sft":
+        from job_agents.tailor import validate_rewrites, rewrite_text
+        try:
+            eligible_facts = {key: value for key, value in fact_bank(applicant).items()
+                             if key not in {"work_authorized", "needs_sponsorship", "has_clearance"}}
+            validate_rewrites(content.rewrites, eligible_facts)
+            if [b.fact_id for b in content.rewrites] != content.fact_ids:
+                errors.append("Rewrite evidence differs from selected facts.")
+            expected = (GroundedDocument(text=rewrite_text(applicant, content.rewrites), fact_ids=content.fact_ids), expected[1], expected[2])
+        except ValueError as exc:
+            errors.append(str(exc))
+    elif content.rewrites:
+        errors.append("Rewrites require SFT mode.")
     observed = (content.resume, content.cover_letter, content.answers)
     if observed != expected:
         errors.append("Generated documents or answers differ from their verified evidence.")

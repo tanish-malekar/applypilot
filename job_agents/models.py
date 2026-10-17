@@ -112,11 +112,17 @@ class QuestionResponses(Model):
     answers: dict[str, str]
 
 
+class ResumeRewrite(Model):
+    fact_id: str
+    text: str = Field(min_length=1, max_length=2000)
+
+
 class PreparedContent(Model):
     text: str
     fact_ids: list[str]
     facts: dict[str, str]
-    mode: Literal["deterministic", "ollama", "groq"]
+    mode: Literal["deterministic", "ollama", "groq", "sft"]
+    rewrites: list[ResumeRewrite] = Field(default_factory=list)
     resume: GroundedDocument | None = None
     cover_letter: GroundedDocument | None = None
     answers: list[QuestionAnswer] = Field(default_factory=list)

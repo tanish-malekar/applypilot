@@ -11,3 +11,7 @@ runtime/
 .DS_Store
 frontend/node_modules/
 job_agents/web/app/
+
+# Local model weights and private learning data
+/learning/artifacts/
+/learning/private/

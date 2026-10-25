@@ -4,13 +4,14 @@
 
 ApplyPilot is a stateful job-application platform that connects live job discovery with eligibility screening, fact-grounded application content, browser autofill, and human-in-the-loop review. Specialized workflow agents share applicant memory and checkpoints so each application can pause, resume, and leave a clear audit trail.
 
-[Open ApplyPilot](https://job-application-agents.onrender.com) · [Account setup](docs/ACCOUNTS_SETUP.md) · [Deployment guide](docs/DEPLOYMENT.md) · [Technology research](docs/STACK_RESEARCH.md)
+[Try the interactive demo — no login needed](https://job-application-agents.onrender.com/demo) · [Open ApplyPilot](https://job-application-agents.onrender.com) · [Account setup](docs/ACCOUNTS_SETUP.md) · [Deployment guide](docs/DEPLOYMENT.md) · [Technology research](docs/STACK_RESEARCH.md)
 
 ![ApplyPilot React workspace](docs/assets/applypilot-workspace.jpg)
 
 ## What you can do
 
 - **Explore the platform** — A public home page introduces the workflow and shows the actual dashboard.
+- **Try it instantly** — An interactive demo opens a prepared application using a fictional profile and real recorded sandbox results. Inspect the documents and filled-form screenshot, try approve/reject, and restart without logging in, entering details, or calling a model. Demo decisions stay in the browser and send no applications.
 - **Use your own account** — Email/password signup, login, recovery, and Google sign-in through Supabase; enable your providers using the account setup guide.
 
 - **Find live jobs** — Search a company's Greenhouse board by keyword and open the original posting.
@@ -26,7 +27,9 @@ The hosted application connects to live Greenhouse listings and executes applica
 
 ## Try the platform
 
-1. Open [ApplyPilot](https://job-application-agents.onrender.com), explore its features, then open your workspace. Account-enabled installations support signup or Google sign-in; the sample workspace is available while account activation is pending. Review or edit your applicant profile.
+For a quick walkthrough, select **Try the demo** on the home page or open [/demo](https://job-application-agents.onrender.com/demo) directly. It works without account services and uses recorded outputs from a real deterministic Playwright sandbox run, including its form screenshot and receipt. It does not generate a new application or mutate account history. For a live workflow using your own profile:
+
+1. Open [ApplyPilot](https://job-application-agents.onrender.com) and sign in to your workspace. Account-enabled installations support signup or configured Google sign-in. Review or edit your applicant profile. Local installations without managed accounts also provide the live sample workspace at `/practice`.
 2. Open **Browse jobs** to search a live Greenhouse board, or use a sample role to explore the complete workflow. The default board is `arvaintelligence`.
 3. Choose **Prepare** on a job card. Inspect the eligibility checks, grounded content, agent trace, and browser screenshot.
 4. Supply any missing applicant facts, then approve or reject the prepared sandbox application.

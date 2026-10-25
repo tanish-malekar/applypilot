@@ -87,6 +87,7 @@ def create_app(directory: Path | None = None, base_url: str | None = None):
     @app.get("/login", response_class=HTMLResponse)
     @app.get("/app", response_class=HTMLResponse)
     @app.get("/demo", response_class=HTMLResponse)
+    @app.get("/practice", response_class=HTMLResponse)
     @app.get("/", response_class=HTMLResponse)
     def home():
         if not (APP_WEB / "index.html").is_file():

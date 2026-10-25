@@ -56,6 +56,9 @@ export default function Landing({ navigate, user, demoMode, accountsReady }) {
           <a href="#how-it-works">How it works</a>
         </nav>
         <div className="landing-nav-actions">
+          <button className="text-button" onClick={() => navigate("/demo")}>
+            View demo
+          </button>
           {!user && (
             <button className="text-button" onClick={() => navigate("/login")}>
               Log in
@@ -83,19 +86,24 @@ export default function Landing({ navigate, user, demoMode, accountsReady }) {
             help. You make the final call.
           </p>
           <div className="landing-hero-actions">
-            <button className="primary" onClick={() => navigate(destination)}>
-              {user
-                ? "Go to your workspace"
-                : accountsReady
-                  ? "Create your free account"
-                  : "Explore the workspace"}
+            <button className="primary" onClick={() => navigate("/demo")}>
+              Try the demo
               <ArrowRight size={17} />
+            </button>
+            <button
+              className="text-button"
+              onClick={() => navigate(destination)}
+            >
+              {user ? "Go to your workspace" : "Create your free account"}
             </button>
             <a href="#workspace-preview" className="landing-outline">
               Preview dashboard <ArrowUpRight size={15} />
             </a>
           </div>
           <div className="landing-benefits">
+            <span>
+              <Check size={13} /> No login or details required for the demo
+            </span>
             <span>
               <Check size={13} /> Human approval built in
             </span>
@@ -122,7 +130,9 @@ export default function Landing({ navigate, user, demoMode, accountsReady }) {
             <span>
               <ShieldCheck size={14} /> An actual ApplyPilot dashboard
             </span>
-            <span>Sample roles and sandbox outcomes shown.</span>
+            <button className="text-button" onClick={() => navigate("/demo")}>
+              Open interactive demo <ArrowUpRight size={14} />
+            </button>
           </div>
         </section>
         <section id="features" className="landing-section">
@@ -210,12 +220,9 @@ export default function Landing({ navigate, user, demoMode, accountsReady }) {
                 : "Try the sample workspace"}
             <ArrowRight size={17} />
           </button>
-          {demoMode && (
-            <button className="text-button" onClick={() => navigate("/demo")}>
-              Try the sample workspace without an account{" "}
-              <ArrowUpRight size={14} />
-            </button>
-          )}
+          <button className="text-button" onClick={() => navigate("/demo")}>
+            Explore the demo without an account <ArrowUpRight size={14} />
+          </button>
         </section>
       </main>
       <footer className="landing-footer">

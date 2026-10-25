@@ -1,0 +1,121 @@
+.demo-page {
+  min-height: 100vh;
+  background: #f7f9f7;
+}
+.demo-page .landing-nav {
+  background: white;
+}
+.demo-main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 48px 24px 72px;
+}
+.demo-intro {
+  max-width: 800px;
+}
+.demo-intro h1 {
+  font-size: clamp(30px, 5vw, 46px);
+  letter-spacing: -1.6px;
+  line-height: 1.16;
+  margin: 14px 0;
+  color: #173f34;
+}
+.demo-intro p,
+.demo-card p {
+  color: #66736b;
+  line-height: 1.7;
+}
+.demo-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #eaf2ed;
+  color: #274d3d;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.demo-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.demo-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 28px 0 20px;
+  flex-wrap: wrap;
+}
+.demo-controls [role="tablist"] {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.demo-card {
+  padding: 28px;
+  border: 1px solid #e0e7e1;
+  border-radius: 20px;
+  background: white;
+}
+.demo-card h2 {
+  margin: 12px 0;
+}
+.demo-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin: 28px 0;
+}
+.demo-facts dt {
+  color: #768378;
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+.demo-facts dd {
+  margin: 0;
+  line-height: 1.65;
+}
+.demo-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+.demo-checks span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  background: #eef6f0;
+  padding: 7px 11px;
+  border-radius: 20px;
+}
+.demo-card .browser-evidence {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 22px 0;
+  border: 1px solid #e0e7e1;
+}
+@media (max-width: 600px) {
+  .demo-main {
+    padding: 28px 14px 48px;
+  }
+  .demo-card {
+    padding: 20px;
+  }
+  .demo-facts {
+    grid-template-columns: 1fr;
+  }
+  .demo-page .landing-nav {
+    gap: 12px;
+    padding: 16px;
+    flex-wrap: wrap;
+  }
+  .demo-controls [role="tab"] {
+    font-size: 12px;
+    padding: 10px;
+  }
+}

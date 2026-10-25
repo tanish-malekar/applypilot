@@ -1,0 +1,573 @@
+{
+  "applicant": {
+    "id": "demo-alex",
+    "name": "Alex Morgan",
+    "email": "alex@example.com",
+    "degree": "masters",
+    "graduation_date": "2027-05-15",
+    "experience_years": 1,
+    "location": "United States",
+    "work_authorized": true,
+    "needs_sponsorship": true,
+    "has_clearance": false,
+    "skills": [
+      "Python",
+      "LangGraph",
+      "FastAPI",
+      "PyTorch"
+    ],
+    "accomplishments": [
+      "Built a university prototype that routes tasks through specialized agents."
+    ]
+  },
+  "review": {
+    "run_id": "c86fbe54-237d-44ff-8a1c-b864fa232843",
+    "applicant": {
+      "id": "demo-alex",
+      "name": "Alex Morgan",
+      "email": "alex@example.com",
+      "degree": "masters",
+      "graduation_date": "2027-05-15",
+      "experience_years": 1.0,
+      "location": "United States",
+      "work_authorized": true,
+      "needs_sponsorship": true,
+      "has_clearance": false,
+      "skills": [
+        "Python",
+        "LangGraph",
+        "FastAPI",
+        "PyTorch"
+      ],
+      "accomplishments": [
+        "Built a university prototype that routes tasks through specialized agents."
+      ],
+      "application_answers": {}
+    },
+    "job": {
+      "id": "demo-ml-001",
+      "title": "Applied ML Engineer Intern",
+      "company": "Northstar Demo Labs",
+      "description": "Build Python agent workflows with LangGraph, evaluate reliability, and expose APIs.",
+      "skills": [
+        "Python",
+        "LangGraph",
+        "FastAPI"
+      ],
+      "source": "fixture",
+      "source_url": null,
+      "source_location": null,
+      "extraction_notes": [],
+      "requirement_evidence": {},
+      "questions": [
+        {
+          "id": "skills",
+          "prompt": "Which relevant skills do you bring?",
+          "fact_id": "skills"
+        }
+      ],
+      "form_layout": "standard",
+      "min_degree": "bachelors",
+      "graduation_start": "2026-12-01",
+      "graduation_end": "2027-08-31",
+      "min_experience_years": 0.0,
+      "allowed_locations": [
+        "United States"
+      ],
+      "requires_work_authorization": true,
+      "offers_sponsorship": true,
+      "requires_clearance": false
+    },
+    "status": "awaiting_review",
+    "eligibility": {
+      "status": "eligible",
+      "checks": [
+        {
+          "name": "degree",
+          "status": "pass",
+          "evidence": "Minimum: bachelors; applicant: masters",
+          "missing_profile_field": null
+        },
+        {
+          "name": "graduation",
+          "status": "pass",
+          "evidence": "Window: 2026-12-01..2027-08-31; applicant: 2027-05-15",
+          "missing_profile_field": null
+        },
+        {
+          "name": "experience",
+          "status": "pass",
+          "evidence": "Minimum years: 0.0; applicant: 1.0",
+          "missing_profile_field": null
+        },
+        {
+          "name": "location",
+          "status": "pass",
+          "evidence": "Allowed: ['United States']; applicant: United States",
+          "missing_profile_field": null
+        },
+        {
+          "name": "work_authorization",
+          "status": "pass",
+          "evidence": "Work authorization required; applicant: True",
+          "missing_profile_field": null
+        },
+        {
+          "name": "sponsorship",
+          "status": "pass",
+          "evidence": "Applicant needs sponsorship; job offers sponsorship: True",
+          "missing_profile_field": null
+        },
+        {
+          "name": "clearance",
+          "status": "not_applicable",
+          "evidence": "No explicit constraint in normalized job.",
+          "missing_profile_field": null
+        }
+      ]
+    },
+    "content": {
+      "text": "My name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.",
+      "fact_ids": [
+        "identity",
+        "skills",
+        "degree",
+        "graduation",
+        "experience",
+        "location",
+        "accomplishment_0"
+      ],
+      "facts": {
+        "identity": "My name is Alex Morgan.",
+        "degree": "My degree level is masters.",
+        "graduation": "My graduation date is 2027-05-15.",
+        "experience": "I have 1 year of experience.",
+        "skills": "My skills include Python, LangGraph, FastAPI, PyTorch.",
+        "location": "Location: United States.",
+        "work_authorized": "Work authorized: True.",
+        "needs_sponsorship": "Needs sponsorship: True.",
+        "has_clearance": "Has clearance: False.",
+        "accomplishment_0": "Built a university prototype that routes tasks through specialized agents."
+      },
+      "mode": "deterministic",
+      "resume": {
+        "text": "Alex Morgan\nalex@example.com\n\nMy name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.",
+        "fact_ids": [
+          "identity",
+          "skills",
+          "degree",
+          "graduation",
+          "experience",
+          "location",
+          "accomplishment_0"
+        ]
+      },
+      "cover_letter": {
+        "text": "Dear hiring team,\n\nPlease consider my application.\n\nMy name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.\n\nThank you for your consideration.\nAlex Morgan",
+        "fact_ids": [
+          "identity",
+          "skills",
+          "degree",
+          "graduation",
+          "experience",
+          "location",
+          "accomplishment_0"
+        ]
+      },
+      "answers": [
+        {
+          "id": "skills",
+          "prompt": "Which relevant skills do you bring?",
+          "answer": "My skills include Python, LangGraph, FastAPI, PyTorch.",
+          "fact_ids": [
+            "skills"
+          ],
+          "provenance": "profile"
+        }
+      ]
+    },
+    "browser": {
+      "fields": {
+        "name": "Alex Morgan",
+        "email": "alex@example.com",
+        "location": "United States",
+        "work_authorized": "yes",
+        "needs_sponsorship": "yes",
+        "cover_letter": "Dear hiring team,\n\nPlease consider my application.\n\nMy name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.\n\nThank you for your consideration.\nAlex Morgan",
+        "application_answers": "Which relevant skills do you bring?\nMy skills include Python, LangGraph, FastAPI, PyTorch."
+      },
+      "upload": [
+        "resume.txt"
+      ],
+      "errors": [],
+      "observed_fields": [
+        {
+          "field": "name",
+          "label": "Full name",
+          "count": 1
+        },
+        {
+          "field": "email",
+          "label": "Email address",
+          "count": 1
+        },
+        {
+          "field": "location",
+          "label": "Location",
+          "count": 1
+        },
+        {
+          "field": "work_authorized",
+          "label": "Authorized to work",
+          "count": 1
+        },
+        {
+          "field": "needs_sponsorship",
+          "label": "Need sponsorship",
+          "count": 1
+        },
+        {
+          "field": "cover_letter",
+          "label": "Application statement",
+          "count": 1
+        },
+        {
+          "field": "application_answers",
+          "label": "Application questions",
+          "count": 1
+        }
+      ],
+      "screenshot": "recorded-demo",
+      "receipt": null
+    },
+    "verification": {
+      "passed": true,
+      "errors": []
+    },
+    "trace": [
+      {
+        "agent": "discovery",
+        "message": "Normalized job demo-ml-001 from fixture.",
+        "at": "2026-10-25T18:30:20.585307+00:00"
+      },
+      {
+        "agent": "memory",
+        "message": "Reused human-provided fields: [].",
+        "at": "2026-10-25T18:30:20.585826+00:00"
+      },
+      {
+        "agent": "eligibility",
+        "message": "eligible",
+        "at": "2026-10-25T18:30:20.586101+00:00"
+      },
+      {
+        "agent": "content",
+        "message": "Selected 7 grounded facts.",
+        "at": "2026-10-25T18:30:20.586620+00:00"
+      },
+      {
+        "agent": "application",
+        "message": "Filled local sandbox form.",
+        "at": "2026-10-25T18:30:21.920752+00:00"
+      },
+      {
+        "agent": "verification",
+        "message": "Passed.",
+        "at": "2026-10-25T18:30:21.921507+00:00"
+      }
+    ],
+    "pending": [
+      {
+        "kind": "review",
+        "message": "Review the local sandbox application.",
+        "content": "My name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.",
+        "fields": {
+          "name": "Alex Morgan",
+          "email": "alex@example.com",
+          "location": "United States",
+          "work_authorized": "yes",
+          "needs_sponsorship": "yes",
+          "cover_letter": "Dear hiring team,\n\nPlease consider my application.\n\nMy name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.\n\nThank you for your consideration.\nAlex Morgan",
+          "application_answers": "Which relevant skills do you bring?\nMy skills include Python, LangGraph, FastAPI, PyTorch."
+        }
+      }
+    ]
+  },
+  "submitted": {
+    "run_id": "c86fbe54-237d-44ff-8a1c-b864fa232843",
+    "applicant": {
+      "id": "demo-alex",
+      "name": "Alex Morgan",
+      "email": "alex@example.com",
+      "degree": "masters",
+      "graduation_date": "2027-05-15",
+      "experience_years": 1.0,
+      "location": "United States",
+      "work_authorized": true,
+      "needs_sponsorship": true,
+      "has_clearance": false,
+      "skills": [
+        "Python",
+        "LangGraph",
+        "FastAPI",
+        "PyTorch"
+      ],
+      "accomplishments": [
+        "Built a university prototype that routes tasks through specialized agents."
+      ],
+      "application_answers": {}
+    },
+    "job": {
+      "id": "demo-ml-001",
+      "title": "Applied ML Engineer Intern",
+      "company": "Northstar Demo Labs",
+      "description": "Build Python agent workflows with LangGraph, evaluate reliability, and expose APIs.",
+      "skills": [
+        "Python",
+        "LangGraph",
+        "FastAPI"
+      ],
+      "source": "fixture",
+      "source_url": null,
+      "source_location": null,
+      "extraction_notes": [],
+      "requirement_evidence": {},
+      "questions": [
+        {
+          "id": "skills",
+          "prompt": "Which relevant skills do you bring?",
+          "fact_id": "skills"
+        }
+      ],
+      "form_layout": "standard",
+      "min_degree": "bachelors",
+      "graduation_start": "2026-12-01",
+      "graduation_end": "2027-08-31",
+      "min_experience_years": 0.0,
+      "allowed_locations": [
+        "United States"
+      ],
+      "requires_work_authorization": true,
+      "offers_sponsorship": true,
+      "requires_clearance": false
+    },
+    "status": "submitted",
+    "eligibility": {
+      "status": "eligible",
+      "checks": [
+        {
+          "name": "degree",
+          "status": "pass",
+          "evidence": "Minimum: bachelors; applicant: masters",
+          "missing_profile_field": null
+        },
+        {
+          "name": "graduation",
+          "status": "pass",
+          "evidence": "Window: 2026-12-01..2027-08-31; applicant: 2027-05-15",
+          "missing_profile_field": null
+        },
+        {
+          "name": "experience",
+          "status": "pass",
+          "evidence": "Minimum years: 0.0; applicant: 1.0",
+          "missing_profile_field": null
+        },
+        {
+          "name": "location",
+          "status": "pass",
+          "evidence": "Allowed: ['United States']; applicant: United States",
+          "missing_profile_field": null
+        },
+        {
+          "name": "work_authorization",
+          "status": "pass",
+          "evidence": "Work authorization required; applicant: True",
+          "missing_profile_field": null
+        },
+        {
+          "name": "sponsorship",
+          "status": "pass",
+          "evidence": "Applicant needs sponsorship; job offers sponsorship: True",
+          "missing_profile_field": null
+        },
+        {
+          "name": "clearance",
+          "status": "not_applicable",
+          "evidence": "No explicit constraint in normalized job.",
+          "missing_profile_field": null
+        }
+      ]
+    },
+    "content": {
+      "text": "My name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.",
+      "fact_ids": [
+        "identity",
+        "skills",
+        "degree",
+        "graduation",
+        "experience",
+        "location",
+        "accomplishment_0"
+      ],
+      "facts": {
+        "identity": "My name is Alex Morgan.",
+        "degree": "My degree level is masters.",
+        "graduation": "My graduation date is 2027-05-15.",
+        "experience": "I have 1 year of experience.",
+        "skills": "My skills include Python, LangGraph, FastAPI, PyTorch.",
+        "location": "Location: United States.",
+        "work_authorized": "Work authorized: True.",
+        "needs_sponsorship": "Needs sponsorship: True.",
+        "has_clearance": "Has clearance: False.",
+        "accomplishment_0": "Built a university prototype that routes tasks through specialized agents."
+      },
+      "mode": "deterministic",
+      "resume": {
+        "text": "Alex Morgan\nalex@example.com\n\nMy name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.",
+        "fact_ids": [
+          "identity",
+          "skills",
+          "degree",
+          "graduation",
+          "experience",
+          "location",
+          "accomplishment_0"
+        ]
+      },
+      "cover_letter": {
+        "text": "Dear hiring team,\n\nPlease consider my application.\n\nMy name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.\n\nThank you for your consideration.\nAlex Morgan",
+        "fact_ids": [
+          "identity",
+          "skills",
+          "degree",
+          "graduation",
+          "experience",
+          "location",
+          "accomplishment_0"
+        ]
+      },
+      "answers": [
+        {
+          "id": "skills",
+          "prompt": "Which relevant skills do you bring?",
+          "answer": "My skills include Python, LangGraph, FastAPI, PyTorch.",
+          "fact_ids": [
+            "skills"
+          ],
+          "provenance": "profile"
+        }
+      ]
+    },
+    "browser": {
+      "fields": {
+        "name": "Alex Morgan",
+        "email": "alex@example.com",
+        "location": "United States",
+        "work_authorized": "yes",
+        "needs_sponsorship": "yes",
+        "cover_letter": "Dear hiring team,\n\nPlease consider my application.\n\nMy name is Alex Morgan.\n\nMy skills include Python, LangGraph, FastAPI, PyTorch.\n\nMy degree level is masters.\n\nMy graduation date is 2027-05-15.\n\nI have 1 year of experience.\n\nLocation: United States.\n\nBuilt a university prototype that routes tasks through specialized agents.\n\nThank you for your consideration.\nAlex Morgan",
+        "application_answers": "Which relevant skills do you bring?\nMy skills include Python, LangGraph, FastAPI, PyTorch."
+      },
+      "upload": [
+        "resume.txt"
+      ],
+      "errors": [],
+      "observed_fields": [
+        {
+          "field": "name",
+          "label": "Full name",
+          "count": 1
+        },
+        {
+          "field": "email",
+          "label": "Email address",
+          "count": 1
+        },
+        {
+          "field": "location",
+          "label": "Location",
+          "count": 1
+        },
+        {
+          "field": "work_authorized",
+          "label": "Authorized to work",
+          "count": 1
+        },
+        {
+          "field": "needs_sponsorship",
+          "label": "Need sponsorship",
+          "count": 1
+        },
+        {
+          "field": "cover_letter",
+          "label": "Application statement",
+          "count": 1
+        },
+        {
+          "field": "application_answers",
+          "label": "Application questions",
+          "count": 1
+        }
+      ],
+      "screenshot": "recorded-demo",
+      "receipt": "sandbox-c86fbe54-237d-44ff-8a1c-b864fa232843"
+    },
+    "verification": {
+      "passed": true,
+      "errors": []
+    },
+    "decision": {
+      "approved": true
+    },
+    "receipt": "sandbox-c86fbe54-237d-44ff-8a1c-b864fa232843",
+    "trace": [
+      {
+        "agent": "discovery",
+        "message": "Normalized job demo-ml-001 from fixture.",
+        "at": "2026-10-25T18:30:20.585307+00:00"
+      },
+      {
+        "agent": "memory",
+        "message": "Reused human-provided fields: [].",
+        "at": "2026-10-25T18:30:20.585826+00:00"
+      },
+      {
+        "agent": "eligibility",
+        "message": "eligible",
+        "at": "2026-10-25T18:30:20.586101+00:00"
+      },
+      {
+        "agent": "content",
+        "message": "Selected 7 grounded facts.",
+        "at": "2026-10-25T18:30:20.586620+00:00"
+      },
+      {
+        "agent": "application",
+        "message": "Filled local sandbox form.",
+        "at": "2026-10-25T18:30:21.920752+00:00"
+      },
+      {
+        "agent": "verification",
+        "message": "Passed.",
+        "at": "2026-10-25T18:30:21.921507+00:00"
+      },
+      {
+        "agent": "review",
+        "message": "Approved.",
+        "at": "2026-10-25T18:30:21.932772+00:00"
+      },
+      {
+        "agent": "auto_apply",
+        "message": "Submitted verified local application.",
+        "at": "2026-10-25T18:30:22.994554+00:00"
+      },
+      {
+        "agent": "tracking",
+        "message": "Recorded outcome: submitted.",
+        "at": "2026-10-25T18:30:22.994999+00:00"
+      }
+    ],
+    "pending": []
+  }
+}

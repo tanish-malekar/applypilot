@@ -42,7 +42,7 @@ def test_react_profile_missing_fact_approval_and_history():
             demo = source.get("/api/demo").json()
         demo["jobs"][0]["questions"].append({"id": "start", "prompt": "When can you start?"})
         page.route("**/api/demo", lambda route: route.fulfill(json=demo))
-        page.goto("http://127.0.0.1:8000/demo")
+        page.goto("http://127.0.0.1:8000/practice")
         page.get_by_label("Search by title or company").fill("Secure")
         expect(
             page.get_by_role("button", name="Prepare application for ML Engineer, Secure Systems")

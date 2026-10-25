@@ -180,7 +180,13 @@ function MissingQuestions({ pending, onResume, busy }) {
   );
 }
 
-export default function Workspace({ run, busy, onResume, selectedJob }) {
+export default function Workspace({
+  run,
+  busy,
+  onResume,
+  selectedJob,
+  demoEvidence,
+}) {
   const pending = run?.pending?.[0];
   return (
     <section className="panel workspace" aria-labelledby="studio-title">
@@ -388,8 +394,9 @@ export default function Workspace({ run, busy, onResume, selectedJob }) {
             <div className="review-block">
               <h4>You're in the pilot's seat.</h4>
               <p>
-                Review the content and browser evidence before approving the
-                sandbox submission.
+                {demoEvidence
+                  ? "Review the recorded content and browser evidence, then try the approval step. This demo does not send an application."
+                  : "Review the content and browser evidence before approving the sandbox submission."}
               </p>
               <div className="actions">
                 <button
@@ -397,7 +404,10 @@ export default function Workspace({ run, busy, onResume, selectedJob }) {
                   onClick={() => onResume({ approved: true })}
                   disabled={busy}
                 >
-                  Approve sandbox submission <Check size={16} />
+                  {demoEvidence
+                    ? "Approve demo application"
+                    : "Approve sandbox submission"}{" "}
+                  <Check size={16} />
                 </button>
                 <button
                   className="secondary"
@@ -416,7 +426,11 @@ export default function Workspace({ run, busy, onResume, selectedJob }) {
             <div className="receipt">
               <CheckCheck size={19} />
               <div>
-                <b>Application submitted to the sandbox</b>
+                <b>
+                  {demoEvidence
+                    ? "Demo complete — recorded sandbox outcome"
+                    : "Application submitted to the sandbox"}
+                </b>
                 <code>{run.receipt}</code>
               </div>
             </div>
@@ -429,14 +443,22 @@ export default function Workspace({ run, busy, onResume, selectedJob }) {
                 </span>
                 <ChevronRight size={16} />
               </summary>
-              <BrowserEvidence
-                path={
-                  "/api/runs/" +
-                  run.run_id +
-                  "/screenshot?t=" +
-                  run.trace.length
-                }
-              />
+              {demoEvidence ? (
+                <img
+                  className="browser-evidence"
+                  src={demoEvidence}
+                  alt="Recorded sandbox form filled for fictional applicant Alex Morgan"
+                />
+              ) : (
+                <BrowserEvidence
+                  path={
+                    "/api/runs/" +
+                    run.run_id +
+                    "/screenshot?t=" +
+                    run.trace.length
+                  }
+                />
+              )}
             </details>
           )}
           <details className="disclosure">

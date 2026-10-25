@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import App from "./App.jsx";
 import Landing from "./components/Landing.jsx";
 import PrivacyPage from "./components/PrivacyPage.jsx";
 import AuthPage from "./components/AuthPage.jsx";
 import { initializeAuth } from "./auth.js";
+
+const Demo = lazy(() => import("./components/Demo.jsx"));
 
 export default function AuthShell() {
   const [path, setPath] = useState(window.location.pathname);
@@ -74,19 +76,19 @@ export default function AuthShell() {
         if (active) setReady(true);
       }
     }
-    boot();
+    if (window.location.pathname !== "/demo") boot();
     return () => {
       active = false;
       subscription?.unsubscribe();
       window.removeEventListener("popstate", pop);
     };
-  }, []);
+  }, [path === "/demo"]);
   useEffect(() => {
     if (!ready) return;
     if (session && ["/login", "/signup", "/auth/callback"].includes(path))
       navigate("/app", true);
     else if (!session && path === "/app") navigate("/login", true);
-    else if (path === "/demo" && config && !config.demo_mode)
+    else if (path === "/practice" && config && !config.demo_mode)
       navigate(session ? "/app" : "/login", true);
     else if (path === "/auth/callback" && !session) navigate("/login", true);
   }, [path, session, ready, config]);
@@ -123,6 +125,18 @@ export default function AuthShell() {
       />
     );
   if (path === "/privacy") return <PrivacyPage navigate={navigate} />;
+  if (path === "/demo")
+    return (
+      <Suspense
+        fallback={
+          <div className="site-loading" role="status">
+            Opening demo…
+          </div>
+        }
+      >
+        <Demo navigate={navigate} />
+      </Suspense>
+    );
   if (!ready)
     return (
       <div className="site-loading" role="status">
@@ -184,8 +198,8 @@ export default function AuthShell() {
           onSignOut={signOut}
           onHome={() => navigate("/")}
         />
-      ) : path === "/demo" && settings.demo_mode ? (
-        <App key="demo" onHome={() => navigate("/")} />
+      ) : path === "/practice" && settings.demo_mode ? (
+        <App key="practice" onHome={() => navigate("/")} />
       ) : (
         <Landing
           navigate={navigate}

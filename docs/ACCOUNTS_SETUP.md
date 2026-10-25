@@ -57,7 +57,7 @@ Alternatively, run `python scripts/create-test-account.py --output /absolute/pri
 - A workflow paused for missing facts or approval resumes after redeployment.
 - Browser screenshots remain available after the local runtime directory is gone.
 
-The public landing page remains usable while provider configuration is pending. Without managed account configuration, `/demo` is a visitor-scoped sample workspace; it is not represented as a real-user account. Setting managed account configuration disables anonymous workflow access.
+The public landing page and `/demo` walkthrough remain usable while provider configuration is pending. The demo is an interactive replay of a recorded fictional sandbox application; it performs no account API calls, saves no user information, and sends no applications. Without managed account configuration, `/practice` is a visitor-scoped live sample workspace; it is not represented as a real-user account. Setting managed account configuration disables anonymous workflow access, while the recorded public demo stays available.
 
 ## Primary documentation
 

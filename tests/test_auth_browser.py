@@ -109,6 +109,51 @@ def install_provider(page):
 
 
 @pytest.mark.browser
+def test_public_demo_needs_no_login_details_or_api():
+    if os.environ.get("RUN_BROWSER_TESTS") != "1":
+        pytest.skip("Build the frontend and start the local API.")
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        page = browser.new_page()
+        api_calls = []
+
+        def unavailable(route):
+            api_calls.append(route.request.url)
+            route.abort()
+
+        page.route("**/api/**", unavailable)
+        page.goto("http://127.0.0.1:8000/demo")
+        expect(
+            page.get_by_role("heading", name="Your first application. Already prepared.")
+        ).to_be_visible()
+        expect(page.get_by_role("button", name="Approve demo application")).to_be_visible()
+        expect(page.locator("input, textarea, select")).to_have_count(0)
+        page.get_by_role("tab", name="1. Sample profile").click()
+        expect(page.get_by_role("heading", name="Alex Morgan", exact=True)).to_be_visible()
+        page.get_by_role("tab", name="2. Filled form").click()
+        form = page.get_by_alt_text(
+            "Recorded sandbox form filled for fictional applicant Alex Morgan"
+        )
+        expect(form).to_be_visible()
+        assert form.evaluate("img => img.complete && img.naturalWidth > 0")
+        page.get_by_role("tab", name="3. Review & approve").click()
+        page.get_by_role("button", name="Approve demo application").click()
+        expect(page.get_by_text("Demo complete — recorded sandbox outcome")).to_be_visible()
+        page.get_by_role("button", name="Restart demo").click()
+        page.get_by_role("button", name="Reject", exact=True).click()
+        expect(page.get_by_role("status")).to_contain_text("Nothing was sent")
+        page.reload()
+        expect(page.get_by_role("button", name="Approve demo application")).to_be_visible()
+        assert not api_calls
+        page.set_viewport_size({"width": 390, "height": 844})
+        expect(
+            page.get_by_role("heading", name="Your first application. Already prepared.")
+        ).to_be_visible()
+        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        browser.close()
+
+
+@pytest.mark.browser
 def test_public_pages_survive_account_service_outage():
     if os.environ.get("RUN_BROWSER_TESTS") != "1":
         pytest.skip("Build the frontend and start the local API.")
@@ -126,6 +171,10 @@ def test_public_pages_survive_account_service_outage():
         expect(page.get_by_role("button", name="Try again", exact=True)).to_be_visible()
         assert page.url.endswith("/signup")
         expect(page.get_by_role("heading", name="Dashboard", exact=True)).to_have_count(0)
+        page.goto("http://127.0.0.1:8000", wait_until="domcontentloaded")
+        page.get_by_role("button", name="Try the demo", exact=True).click()
+        expect(page.get_by_role("button", name="Approve demo application")).to_be_visible()
+        assert page.url.endswith("/demo")
         page.goto("http://127.0.0.1:8000/privacy", wait_until="domcontentloaded")
         expect(page.locator("main")).to_be_visible()
         expect(page.get_by_role("button", name="Try again", exact=True)).to_have_count(0)
@@ -171,6 +220,9 @@ def test_signup_confirmation_login_reload_and_logout():
         page.get_by_role("button", name="Log out", exact=True).click()
         expect(page.get_by_role("button", name="Get started", exact=True)).to_be_visible()
         page.goto("http://127.0.0.1:8000/app")
+        expect(page.get_by_role("heading", name="Welcome back.", exact=True)).to_be_visible()
+        assert page.url.endswith("/login")
+        page.goto("http://127.0.0.1:8000/practice")
         expect(page.get_by_role("heading", name="Welcome back.", exact=True)).to_be_visible()
         assert page.url.endswith("/login")
         browser.close()

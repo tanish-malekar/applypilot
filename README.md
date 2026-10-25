@@ -11,7 +11,7 @@ ApplyPilot is a stateful job-application platform that connects live job discove
 ## What you can do
 
 - **Explore the platform** — A public home page introduces the workflow and shows the actual dashboard.
-- **Try it instantly** — An interactive demo opens a prepared application using a fictional profile and real recorded sandbox results. Inspect the documents and filled-form screenshot, try approve/reject, and restart without logging in, entering details, or calling a model. Demo decisions stay in the browser and send no applications.
+- **Try it instantly** — A visual demo automatically replays the agent typing into fields, uploading a resume, checking the form, receiving sample human approval, and clicking Submit. Pause, replay, change speed, or inspect the documents and actual filled-form screenshot. It uses a fictional profile and recorded sandbox results, requires no login or details, and sends no applications.
 - **Use your own account** — Email/password signup, login, recovery, and Google sign-in through Supabase; enable your providers using the account setup guide.
 
 - **Find live jobs** — Search a company's Greenhouse board by keyword and open the original posting.

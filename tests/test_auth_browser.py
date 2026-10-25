@@ -109,6 +109,52 @@ def install_provider(page):
 
 
 @pytest.mark.browser
+def test_agent_replay_types_pauses_and_clicks_submit_after_approval():
+    if os.environ.get("RUN_BROWSER_TESTS") != "1":
+        pytest.skip("Build the frontend and start the local API.")
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        page = browser.new_page()
+        page.clock.install()
+        page.goto("http://127.0.0.1:8000/demo")
+        replay = page.get_by_role("region", name="Agent browser replay")
+        expect(replay).to_be_visible()
+        page.get_by_role("button", name="Restart animation", exact=True).click()
+        page.clock.run_for(400)
+        typed = page.locator('[data-demo-field="name"]').input_value()
+        assert 0 < len(typed) < len("Alex Morgan")
+        page.get_by_role("button", name="Pause replay").click()
+        page.clock.run_for(2000)
+        assert page.locator('[data-demo-field="name"]').input_value() == typed
+        page.get_by_role("button", name="Play replay").click()
+        page.clock.run_for(10600)
+        expect(page.get_by_text("Sample human approval received", exact=True)).to_be_visible()
+        expect(page.locator('[data-demo-field="email"]')).to_have_value("alex@example.com")
+        expect(page.locator('[data-demo-field="resume"]')).to_contain_text("Uploaded")
+        expect(page.locator(".replay-submit")).not_to_have_class(
+            "primary replay-submit is-clicking"
+        )
+        page.clock.run_for(1200)
+        expect(page.locator(".replay-submit")).to_have_class("primary replay-submit is-clicking")
+        expect(page.get_by_text("Agent clicks", exact=True)).to_be_visible()
+        page.clock.run_for(1200)
+        expect(
+            page.get_by_role("heading", name="Application submitted", exact=True)
+        ).to_be_visible()
+        expect(page.get_by_text("Recorded sandbox receipt · no new submission")).to_be_visible()
+        page.get_by_role("button", name="Restart demo", exact=True).click()
+        expect(page.locator('[data-demo-field="email"]')).to_have_value("")
+        page.emulate_media(reduced_motion="reduce")
+        page.reload()
+        expect(page.get_by_role("button", name="Play replay")).to_be_visible()
+        page.clock.run_for(2000)
+        expect(page.locator('[data-demo-field="name"]')).to_have_value("")
+        page.set_viewport_size({"width": 390, "height": 844})
+        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        browser.close()
+
+
+@pytest.mark.browser
 def test_public_demo_needs_no_login_details_or_api():
     if os.environ.get("RUN_BROWSER_TESTS") != "1":
         pytest.skip("Build the frontend and start the local API.")
@@ -124,10 +170,12 @@ def test_public_demo_needs_no_login_details_or_api():
         page.route("**/api/**", unavailable)
         page.goto("http://127.0.0.1:8000/demo")
         expect(
-            page.get_by_role("heading", name="Your first application. Already prepared.")
+            page.get_by_role("heading", name="Watch your agent handle the busywork.")
         ).to_be_visible()
-        expect(page.get_by_role("button", name="Approve demo application")).to_be_visible()
-        expect(page.locator("input, textarea, select")).to_have_count(0)
+        expect(page.get_by_role("region", name="Agent browser replay")).to_be_visible()
+        expect(
+            page.locator("input:not([readonly]), textarea:not([readonly]), select")
+        ).to_have_count(0)
         page.get_by_role("tab", name="1. Sample profile").click()
         expect(page.get_by_role("heading", name="Alex Morgan", exact=True)).to_be_visible()
         page.get_by_role("tab", name="2. Filled form").click()
@@ -135,19 +183,21 @@ def test_public_demo_needs_no_login_details_or_api():
             "Recorded sandbox form filled for fictional applicant Alex Morgan"
         )
         expect(form).to_be_visible()
+        form.evaluate("img => img.decode()")
         assert form.evaluate("img => img.complete && img.naturalWidth > 0")
         page.get_by_role("tab", name="3. Review & approve").click()
         page.get_by_role("button", name="Approve demo application").click()
         expect(page.get_by_text("Demo complete — recorded sandbox outcome")).to_be_visible()
         page.get_by_role("button", name="Restart demo").click()
+        page.get_by_role("tab", name="3. Review & approve").click()
         page.get_by_role("button", name="Reject", exact=True).click()
         expect(page.get_by_role("status")).to_contain_text("Nothing was sent")
         page.reload()
-        expect(page.get_by_role("button", name="Approve demo application")).to_be_visible()
+        expect(page.get_by_role("region", name="Agent browser replay")).to_be_visible()
         assert not api_calls
         page.set_viewport_size({"width": 390, "height": 844})
         expect(
-            page.get_by_role("heading", name="Your first application. Already prepared.")
+            page.get_by_role("heading", name="Watch your agent handle the busywork.")
         ).to_be_visible()
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
         browser.close()
@@ -173,7 +223,7 @@ def test_public_pages_survive_account_service_outage():
         expect(page.get_by_role("heading", name="Dashboard", exact=True)).to_have_count(0)
         page.goto("http://127.0.0.1:8000", wait_until="domcontentloaded")
         page.get_by_role("button", name="Try the demo", exact=True).click()
-        expect(page.get_by_role("button", name="Approve demo application")).to_be_visible()
+        expect(page.get_by_role("region", name="Agent browser replay")).to_be_visible()
         assert page.url.endswith("/demo")
         page.goto("http://127.0.0.1:8000/privacy", wait_until="domcontentloaded")
         expect(page.locator("main")).to_be_visible()

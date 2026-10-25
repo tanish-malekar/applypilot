@@ -8,13 +8,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Workspace from "./Workspace.jsx";
+import AgentReplay from "./AgentReplay.jsx";
 import recording from "../demo/recording.json";
 import evidence from "../demo/form-evidence.png";
 import "../demo/demo.css";
 
 export default function Demo({ navigate }) {
-  const [tab, setTab] = useState("review");
+  const [tab, setTab] = useState("watch");
   const [decision, setDecision] = useState(null);
+  const [replayKey, setReplayKey] = useState(0);
   const profile = recording.applicant;
   const run =
     decision === true
@@ -23,6 +25,7 @@ export default function Demo({ navigate }) {
         ? { ...recording.review, status: "rejected", pending: [] }
         : recording.review;
   const tabs = [
+    ["watch", "Watch the agent"],
     ["profile", "1. Sample profile"],
     ["form", "2. Filled form"],
     ["review", "3. Review & approve"],
@@ -50,13 +53,13 @@ export default function Demo({ navigate }) {
           Create an account <ArrowRight size={16} />
         </button>
       </header>
-      <main className="demo-main">
+      <main className={"demo-main " + (tab === "watch" ? "demo-watching" : "")}>
         <div className="demo-intro">
           <span className="eyebrow">INTERACTIVE DEMO · NO SIGNUP NEEDED</span>
-          <h1>Your first application. Already prepared.</h1>
+          <h1>Watch your agent handle the busywork.</h1>
           <p>
-            Meet Alex, our fictional applicant. Explore the filled form, read
-            the documents, and try approving the application.
+            See the agent fill Alex’s application, upload a resume, and click
+            Submit after sample approval. No login or typing needed.
           </p>
           <div className="demo-note">
             <ShieldCheck size={18} />
@@ -86,7 +89,8 @@ export default function Demo({ navigate }) {
             className="text-button"
             onClick={() => {
               setDecision(null);
-              setTab("review");
+              setReplayKey((value) => value + 1);
+              setTab("watch");
             }}
           >
             <RotateCcw size={15} /> Restart demo
@@ -97,7 +101,9 @@ export default function Demo({ navigate }) {
           role="tabpanel"
           aria-labelledby={"demo-tab-" + tab}
         >
-          {tab === "profile" ? (
+          {tab === "watch" ? (
+            <AgentReplay key={replayKey} onReview={() => setTab("review")} />
+          ) : tab === "profile" ? (
             <div className="demo-card">
               <span className="eyebrow">EVERYTHING IS PREFILLED</span>
               <h2>{profile.name}</h2>

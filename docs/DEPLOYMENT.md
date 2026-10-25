@@ -24,6 +24,12 @@ Hugging Face Docker was considered, but its current [Spaces documentation](https
 
 ## Account-enabled deployment
 
+### Recover a paused database
+
+If Render cannot start and its PostgreSQL logs report `tenant/user ... not found`, check the existing Supabase project's dashboard before changing credentials. A paused project can also stop resolving at its public API hostname. Use **Resume project** on the existing Free project, wait for it to become healthy, then restart or redeploy the existing Render service. Preserve `DATABASE_URL` and all account configuration; do not substitute anonymous access or a new empty database. Verify `/health`, `/api/auth/config`, the login page, and an authenticated workspace after recovery.
+
+The React home and privacy pages render without waiting for account initialization. Account routes still require successful configuration and session loading; an unavailable account service does not enable the sample workspace. A database outage can still prevent the Python service from starting, so database recovery is required for the full site.
+
 Configure `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL`, and `AUTH_REQUIRED=1` together in the existing Render service. The first two are public browser configuration; the PostgreSQL URI stays private. Use Supabase's session pooler on port 5432 with TLS. The application initializes its private database schema and LangGraph checkpoint tables automatically. Sign-in requires only the public Supabase key; do not give the frontend a secret/service-role key. No paid service has been provisioned.
 
 The public home page is served at `/`, account screens at `/signup` and `/login`, and the authenticated dashboard at `/app`. Google/email callbacks use `/auth/callback`; reset links use `/auth/recovery`. Google availability is discovered from provider settings. While configuration is pending, the existing sample workflow remains at `/demo` and no account access is represented as active.

@@ -109,6 +109,30 @@ def install_provider(page):
 
 
 @pytest.mark.browser
+def test_public_pages_survive_account_service_outage():
+    if os.environ.get("RUN_BROWSER_TESTS") != "1":
+        pytest.skip("Build the frontend and start the local API.")
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        page = browser.new_page()
+        pending = []
+        page.route("**/api/auth/config", lambda route: pending.append(route))
+        page.goto("http://127.0.0.1:8000", wait_until="domcontentloaded")
+        expect(page.get_by_role("button", name="Get started", exact=True)).to_be_visible()
+        assert pending
+        pending.pop().fulfill(status=503, json={"detail": "Provider unavailable"})
+        expect(page.get_by_role("button", name="Get started", exact=True)).to_be_visible()
+        page.get_by_role("button", name="Get started", exact=True).click()
+        expect(page.get_by_role("button", name="Try again", exact=True)).to_be_visible()
+        assert page.url.endswith("/signup")
+        expect(page.get_by_role("heading", name="Dashboard", exact=True)).to_have_count(0)
+        page.goto("http://127.0.0.1:8000/privacy", wait_until="domcontentloaded")
+        expect(page.locator("main")).to_be_visible()
+        expect(page.get_by_role("button", name="Try again", exact=True)).to_have_count(0)
+        browser.close()
+
+
+@pytest.mark.browser
 def test_signup_confirmation_login_reload_and_logout():
     if os.environ.get("RUN_BROWSER_TESTS") != "1":
         pytest.skip("Build the frontend and start the local API.")

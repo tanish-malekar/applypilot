@@ -64,7 +64,12 @@ export default function AuthShell() {
           if (active) setSession(data.session);
         }
       } catch (err) {
-        if (active) setError(err.message);
+        if (active)
+          setError(
+            err.name === "TimeoutError" || err.name === "AbortError"
+              ? "Account services are taking longer than expected. Please try again shortly."
+              : err.message,
+          );
       } finally {
         if (active) setReady(true);
       }
@@ -106,6 +111,18 @@ export default function AuthShell() {
     setSession(null);
     navigate("/");
   }
+  // Public pages must remain readable while account services wake or recover.
+  // Account routes still wait for configuration and never fall back to a demo.
+  if (path === "/")
+    return (
+      <Landing
+        navigate={navigate}
+        user={session?.user}
+        demoMode={Boolean(config?.demo_mode)}
+        accountsReady={config ? config.enabled : true}
+      />
+    );
+  if (path === "/privacy") return <PrivacyPage navigate={navigate} />;
   if (!ready)
     return (
       <div className="site-loading" role="status">

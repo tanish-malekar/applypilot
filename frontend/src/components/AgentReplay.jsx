@@ -35,17 +35,23 @@ export default function AgentReplay({ onReview }) {
   );
   const [speed, setSpeed] = useState(1);
   const viewport = useRef(null);
-  const player = useRef(null);
+  const browserFrame = useRef(null);
+  const [inView, setInView] = useState(false);
   const targets = useRef({});
   const index = Math.min(Math.floor(elapsed / duration), steps.length - 1);
   const phase = steps[index][0];
   const finished = phase === "done";
   useEffect(() => {
-    // Keep the entire browser visible so the Submit click is not below the fold.
-    player.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    const observer = new IntersectionObserver(
+      ([entry]) =>
+        setInView(entry.isIntersecting && entry.intersectionRatio >= 0.5),
+      { threshold: [0, 0.5, 1] },
+    );
+    observer.observe(browserFrame.current);
+    return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (!playing || finished) return;
+    if (!playing || finished || !inView) return;
     const timer = setInterval(
       () =>
         setElapsed((value) =>
@@ -54,7 +60,7 @@ export default function AgentReplay({ onReview }) {
       80,
     );
     return () => clearInterval(timer);
-  }, [playing, finished, speed]);
+  }, [playing, finished, speed, inView]);
   useEffect(() => {
     const target = targets.current[phase] || targets.current.submit;
     if (!target || !viewport.current) return;
@@ -71,13 +77,13 @@ export default function AgentReplay({ onReview }) {
   function restart() {
     setElapsed(0);
     setPlaying(true);
+    browserFrame.current?.scrollIntoView({
+      block: "center",
+      behavior: "instant",
+    });
   }
   return (
-    <section
-      ref={player}
-      className="agent-replay"
-      aria-label="Agent browser replay"
-    >
+    <section className="agent-replay" aria-label="Agent browser replay">
       <div className="replay-toolbar">
         <div>
           <span className="eyebrow">WATCH THE AGENT WORK</span>
@@ -86,7 +92,15 @@ export default function AgentReplay({ onReview }) {
         <div className="replay-actions">
           <button
             className="secondary"
-            onClick={() => (finished ? restart() : setPlaying(!playing))}
+            onClick={() => {
+              if (finished) return restart();
+              if (!playing)
+                browserFrame.current?.scrollIntoView({
+                  block: "center",
+                  behavior: "instant",
+                });
+              setPlaying(!playing);
+            }}
           >
             {playing && !finished ? <Pause size={15} /> : <Play size={15} />}
             {finished ? "Play again" : playing ? "Pause replay" : "Play replay"}
@@ -127,7 +141,7 @@ export default function AgentReplay({ onReview }) {
             </div>
           ))}
         </aside>
-        <div className="replay-browser">
+        <div className="replay-browser" ref={browserFrame}>
           <div className="replay-browserbar">
             <i />
             <i />

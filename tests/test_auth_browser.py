@@ -124,8 +124,9 @@ def test_agent_replay_types_pauses_and_clicks_submit_after_approval():
         typed = page.locator('[data-demo-field="name"]').input_value()
         assert 0 < len(typed) < len("Alex Morgan")
         page.get_by_role("button", name="Pause replay").click()
+        paused_value = page.locator('[data-demo-field="name"]').input_value()
         page.clock.run_for(2000)
-        assert page.locator('[data-demo-field="name"]').input_value() == typed
+        assert page.locator('[data-demo-field="name"]').input_value() == paused_value
         page.get_by_role("button", name="Play replay").click()
         page.clock.run_for(10600)
         expect(page.get_by_text("Sample human approval received", exact=True)).to_be_visible()
@@ -151,6 +152,14 @@ def test_agent_replay_types_pauses_and_clicks_submit_after_approval():
         expect(page.locator('[data-demo-field="name"]')).to_have_value("")
         page.set_viewport_size({"width": 390, "height": 844})
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        page.emulate_media(reduced_motion="no-preference")
+        page.reload()
+        expect(page.get_by_role("region", name="Agent browser replay")).to_be_visible()
+        page.clock.run_for(2000)
+        expect(page.locator('[data-demo-field="name"]')).to_have_value("")
+        page.locator(".replay-browser").scroll_into_view_if_needed()
+        page.clock.run_for(2000)
+        expect(page.locator('[data-demo-field="name"]')).to_have_value("Alex Morgan")
         browser.close()
 
 

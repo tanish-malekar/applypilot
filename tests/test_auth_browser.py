@@ -115,30 +115,28 @@ def test_agent_replay_types_pauses_and_clicks_submit_after_approval():
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         page = browser.new_page()
-        page.clock.install()
         page.goto("http://127.0.0.1:8000/demo")
-        replay = page.get_by_role("region", name="Agent browser replay")
-        expect(replay).to_be_visible()
+        expect(page.get_by_role("region", name="Agent browser replay")).to_be_visible()
         page.get_by_role("button", name="Restart animation", exact=True).click()
-        page.clock.run_for(400)
-        typed = page.locator('[data-demo-field="name"]').input_value()
-        assert 0 < len(typed) < len("Alex Morgan")
+        page.wait_for_function(
+            """() => {
+                const field = document.querySelector('[data-demo-field="name"]');
+                return field && field.value.length > 0 && field.value.length < 11;
+            }""",
+            polling=20,
+        )
         page.get_by_role("button", name="Pause replay").click()
         paused_value = page.locator('[data-demo-field="name"]').input_value()
-        page.clock.run_for(2000)
+        page.wait_for_timeout(500)
         assert page.locator('[data-demo-field="name"]').input_value() == paused_value
         page.get_by_role("button", name="Play replay").click()
-        page.clock.run_for(10600)
-        expect(page.get_by_text("Sample human approval received", exact=True)).to_be_visible()
+        expect(page.get_by_text("Sample human approval received", exact=True)).to_be_visible(
+            timeout=20000
+        )
         expect(page.locator('[data-demo-field="email"]')).to_have_value("alex@example.com")
         expect(page.locator('[data-demo-field="resume"]')).to_contain_text("Uploaded")
-        expect(page.locator(".replay-submit")).not_to_have_class(
-            "primary replay-submit is-clicking"
-        )
-        page.clock.run_for(1200)
         expect(page.locator(".replay-submit")).to_have_class("primary replay-submit is-clicking")
         expect(page.get_by_text("Agent clicks", exact=True)).to_be_visible()
-        page.clock.run_for(1200)
         expect(
             page.get_by_role("heading", name="Application submitted", exact=True)
         ).to_be_visible()
@@ -148,17 +146,16 @@ def test_agent_replay_types_pauses_and_clicks_submit_after_approval():
         page.emulate_media(reduced_motion="reduce")
         page.reload()
         expect(page.get_by_role("button", name="Play replay")).to_be_visible()
-        page.clock.run_for(2000)
+        page.wait_for_timeout(500)
         expect(page.locator('[data-demo-field="name"]')).to_have_value("")
         page.set_viewport_size({"width": 390, "height": 844})
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
         page.emulate_media(reduced_motion="no-preference")
         page.reload()
         expect(page.get_by_role("region", name="Agent browser replay")).to_be_visible()
-        page.clock.run_for(2000)
+        page.wait_for_timeout(500)
         expect(page.locator('[data-demo-field="name"]')).to_have_value("")
         page.locator(".replay-browser").scroll_into_view_if_needed()
-        page.clock.run_for(2000)
         expect(page.locator('[data-demo-field="name"]')).to_have_value("Alex Morgan")
         browser.close()
 

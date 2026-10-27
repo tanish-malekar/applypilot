@@ -209,7 +209,7 @@ class Workflow:
             )
             return {
                 "content": content.model_dump(mode="json"),
-                "trace": event("content", f"Selected {len(content.fact_ids)} grounded facts."),
+                "trace": event("content", f"Resume Tailor prepared {content.mode} content from {len(content.fact_ids)} grounded facts."),
             }
         except Exception as exc:
             return {"status": "failed", "trace": event("content", f"{type(exc).__name__}: {exc}")}
@@ -250,7 +250,7 @@ class Workflow:
                 Applicant.model_validate(state["applicant"]),
                 PreparedContent.model_validate(state["content"]),
             )
-            return {"browser": result, "trace": event("application", "Filled local sandbox form.")}
+            return {"browser": result, "trace": event("application", "Form Navigator filled the local sandbox form.")}
         except Exception as exc:
             return {
                 "status": "failed",
@@ -278,7 +278,7 @@ class Workflow:
         return {
             "verification": {"passed": not errors, "errors": errors},
             "status": "awaiting_review" if not errors else "verification_failed",
-            "trace": event("verification", "Passed." if not errors else "; ".join(errors)),
+            "trace": event("verification", "Verifier passed." if not errors else "; ".join(errors)),
         }
 
     def review(self, state):

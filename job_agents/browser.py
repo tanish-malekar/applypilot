@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -56,6 +57,12 @@ class SandboxBrowser:
         self.base_url = base_url.rstrip("/")
         self.origin = validate_base_url(base_url)
         self.directory = directory
+        policy_path = os.environ.get("DOM_POLICY_PATH")
+        if policy_path:
+            from job_agents.dom_policy import DOMPolicy
+            self.policy = DOMPolicy(policy_path)
+        else:
+            self.policy = None
 
     def _execute(self, run_id, applicant, content, submit=False):
         fields = expected_fields(applicant, content)
@@ -88,14 +95,17 @@ class SandboxBrowser:
                 page = context.new_page()
                 page.goto(f"{self.base_url}/sandbox/{run_id}", wait_until="networkidle")
                 observed = []
-                for key, value in fields.items():
-                    locator = page.get_by_label(LABELS[key], exact=True)
-                    observed.append({"field": key, "label": LABELS[key], "count": locator.count()})
-                    if key in {"work_authorized", "needs_sponsorship"}:
-                        locator.select_option(value)
-                    else:
-                        locator.fill(value)
-                page.get_by_label("Resume document", exact=True).set_input_files(resume)
+                if self.policy:
+                    observed = self.policy.fill(page, fields, resume)
+                else:
+                    for key, value in fields.items():
+                        locator = page.get_by_label(LABELS[key], exact=True)
+                        observed.append({"field": key, "label": LABELS[key], "count": locator.count()})
+                        if key in {"work_authorized", "needs_sponsorship"}:
+                            locator.select_option(value)
+                        else:
+                            locator.fill(value)
+                    page.get_by_label("Resume document", exact=True).set_input_files(resume)
                 actual = {
                     key: page.get_by_label(label, exact=True).input_value()
                     for key, label in LABELS.items()

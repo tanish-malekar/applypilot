@@ -2,7 +2,7 @@
 
 **Discover opportunities. Prepare grounded applications. Stay in control.**
 
-ApplyPilot is a stateful job-application platform that connects live job discovery with eligibility screening, fact-grounded application content, browser autofill, and human-in-the-loop review. Specialized workflow agents share applicant memory and checkpoints so each application can pause, resume, and leave a clear audit trail.
+ApplyPilot is a stateful job-application platform that connects live job discovery with eligibility screening, fact-grounded application content, browser autofill, and human-in-the-loop review. The Resume Tailor supports local supervised fine-tuning (SFT), the Form Navigator supports an RL-trained DOM selection policy, and the Verifier checks evidence and form values before approval. Specialized workflow agents share applicant memory and checkpoints so each application can pause, resume, and leave a clear audit trail.
 
 [Try the interactive demo — no login needed](https://job-application-agents.onrender.com/demo) · [Open ApplyPilot](https://job-application-agents.onrender.com) · [Account setup](docs/ACCOUNTS_SETUP.md) · [Deployment guide](docs/DEPLOYMENT.md) · [Technology research](docs/STACK_RESEARCH.md)
 
@@ -19,6 +19,7 @@ ApplyPilot is a stateful job-application platform that connects live job discove
 - **Check eligibility** — Inspect degree, graduation, experience, location, work authorization, sponsorship, and clearance checks.
 - **Resolve missing information** — Supply a missing fact, resume the workflow, and reuse that fact for the same applicant.
 - **Prepare grounded content** — Generate separate downloadable text resumes, cover letters, and explicit application-question answers from verified facts. Groq or Ollama selects facts; fixed prose preserves grounding. Unsupported answers pause for your input.
+- **Use learned agents** — Configure a local SFT resume adapter and a REINFORCE-trained DOM policy through the [learning workflow](learning/README.md).
 - **Autofill an application** — Playwright fills a browser form, uploads a generated text resume, and captures screenshot evidence.
 - **Review before submission** — Inspect the content and field checks, then approve or reject. Approved applications are verified again before submission.
 - **Track outcomes** — View agent traces, application status, browser evidence, and submission receipts in your account-scoped history (visitor-scoped in the sample workspace).
@@ -94,6 +95,10 @@ python scripts/start-server.py
 ```
 
 Open http://127.0.0.1:8000. For frontend development, keep the API running and use `npm run dev` in `frontend/`; Vite proxies API requests to the local backend. Rebuild before running or deploying the production interface. Runtime screenshots, generated resumes, applicant facts, and checkpoints are stored in ignored `runtime/`.
+
+## Learned agents
+
+See [SFT, DOM reinforcement learning, and paired evaluation](learning/README.md) for training commands, dataset schemas, adapter loading, and a 150-posting reporting protocol. Learned models integrate into the existing LangGraph content/application/verification stages and preserve the review interrupt. The default hosted configuration uses deterministic content and label-based browser actions.
 
 ## AI configuration
 
